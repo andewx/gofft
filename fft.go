@@ -1,4 +1,4 @@
-// Package fft provides a fast discrete Fourier transformation algorithm.
+// Package gofft provides a fast discrete Fourier transformation algorithm.
 //
 // Implemented is the 1-dimensional DFT of complex input data
 // for with input lengths which are powers of 2.
@@ -7,11 +7,11 @@
 // the input array.
 //
 // Before doing the transform on acutal data, allocate
-// an FFT object with t := fft.New(N) where N is the length of the
-// input array.
-// Then multiple calls to t.Transform(x) can be done with
+// an FFT object with fft.New(N) where N is the length of the
+// input array and a power of 2.
+// Then multiple calls to FFT(x) can be done with
 // different input vectors having the same length.
-package fft
+package gofft
 
 // ALGORITHM
 // Example of the alogrithm with N=8 (P=3)
@@ -46,113 +46,138 @@ import (
 	"math"
 )
 
-type FFT struct {
-	N    int          // Fft length, power of 2.
-	p    int          // Base-2 exponent: 2^p = N.
-	E    []complex128 // Precomputed roots table, length N.
-	perm []int        // Index permutation vector for the input array.
+var (
+	Es    = map[int][]complex128{}
+	perms = map[int][]int{}
+)
+
+// Prepare precomputes values used for FFT on a vector of length N.
+// len(x) must be a perfect power of 2, otherwise this will return an error.
+func Prepare(N int) error {
+	if !isPow2(N) {
+		return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
+	}
+	Es[N] = roots(N)
+	perms[N] = permutationIndex(N)
+	return nil
 }
 
-func New(N int) (f FFT, err error) {
-	var p int
-	N, p, err = lastPow2(N)
+// checkN tests N as being a valid FFT vector length.
+// Returns an error if it isn't.
+func checkN(N int) error {
+	if _, ok := Es[N]; !ok {
+		if !isPow2(N) {
+			return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
+		}
+		return fmt.Errorf("FFT is not initialized for input dimension: %d, must initialize with Prepare(N) first", N)
+	}
+	return nil
+}
+
+// FFT implements the fast Fourier transform.
+// This is done in-place (modifying the input array).
+// Requires O(1) additional memory.
+// len(x) must be a perfect power of 2, otherwise this will return an error.
+// You must call Prepare(len(x)) before this, otherwise this will return an error.
+func FFT(x []complex128) error {
+	N, E, perm, err := getVars(x)
 	if err != nil {
-		return f, err
+		return err
 	}
-	f = FFT{
-		N:    N,
-		p:    p,
-		E:    roots(N),
-		perm: permutationIndex(p),
-	}
-	return f, nil
+	fft(x, N, E, perm)
+	return nil
 }
 
-// Forward transform.
-// The forward transform overwrites the input array.
-func (f FFT) Transform(x []complex128) []complex128 {
-	if len(x) != f.N {
-		panic("Input dimension mismatches: FFT is not initialized, or called with wrong input.")
+// IFFT implements the inverse fast Fourier transform.
+// This is done in-place (modifying the input array).
+// Requires O(1) additional memory.
+// len(x) must be a perfect power of 2, otherwise this will return an error.
+// You must call Prepare(len(x)) before this, otherwise this will return an error.
+func IFFT(x []complex128) error {
+	N, E, perm, err := getVars(x)
+	if err != nil {
+		return err
 	}
+	ifft(x, N, E, perm)
+	return nil
+}
 
+// Pre-load the fft variables for later use.
+func getVars(x []complex128) (N int, E []complex128, perm []int, err error) {
+	N = len(x)
+	E = Es[N]
+	perm = perms[N]
+	err = checkN(N)
+	return
+}
+
+// fft does the actual work for FFT
+func fft(x []complex128, N int, E []complex128, perm []int) {
 	// Reorder the input array.
-	// bitReversalPermutation(x, f.p)
-	f.inputPermutation(x)
+	permute(x, perm)
 
-	// Do the butterfly with index i and j.
-	butterfly := func(k, o, l, s int) {
-		i := k + o
-		j := i + l
-		x[i], x[j] = x[i]+f.E[k*s]*x[j], x[i]+f.E[s*(k+l)]*x[j]
-	}
-
-	n := 1
-	s := f.N // Stride
-	for p := 1; p <= f.p; p++ {
-		n <<= 1
+	s := N // Stride
+	for n := 1; n < N; n <<= 1 {
 		s >>= 1
-		B := f.N / n // Number of blocks.
-		for b := 0; b < B; b++ {
-			K := f.N / (2 * B) // Half block length.
-			o := 2 * b * K     // Block offset.
-			for k := 0; k < K; k++ {
-				butterfly(k, o, K, s)
+		for o := 0; o < N; o += (n << 1) {
+			for k := 0; k < n; k++ {
+				// Do the butterfly with index i and j.
+				i := k + o
+				j := i + n
+				x[i], x[j] = x[i]+E[k*s]*x[j], x[i]+E[s*(k+n)]*x[j]
 			}
 		}
 	}
-	return x
 }
 
-// Inverse is the backwards transform.
-func (f FFT) Inverse(x []complex128) []complex128 {
-	if len(x) != f.N {
-		panic("FFT is not initialized, or called with wrong input. Input dimension mismatches.")
-	}
+// ifft does the actual work for IFFT
+func ifft(x []complex128, N int, E []complex128, perm []int) {
 	// Reverse the input vector
-	for i := 1; i < f.N/2; i++ {
-		j := f.N - i
+	for i := 1; i < N/2; i++ {
+		j := N - i
 		x[i], x[j] = x[j], x[i]
 	}
 
 	// Do the transform.
-	f.Transform(x)
+	fft(x, N, E, perm)
 
 	// Scale the output by 1/N
-	invN := 1.0 / float64(f.N)
+	invN := complex(1.0/float64(N), 0)
 	for i := range x {
-		x[i] *= complex(invN, 0)
+		x[i] *= invN
 	}
-	return x
 }
 
 // permutationIndex builds the bit-inverted index vector,
 // which is needed to permutate the input data.
-func permutationIndex(P int) []int {
-	N := 1 << uint(P)
+func permutationIndex(N int) []int {
 	index := make([]int, N)
 	index[0] = 0 // Initial sequence for N=1
-	n := 1
 	// For every next power of two, the
 	// sequence is multiplied by 2 inplace.
 	// Then the result is also appended to the
 	// end and increased by one.
-	for p := 0; p < P; p++ {
+	for n := 1; n < N; n <<= 1 {
 		for i := 0; i < n; i++ {
 			index[i] <<= 1
 			index[i+n] = index[i] + 1
 		}
-		n <<= 1
 	}
 	return index
 }
 
-// inputPermutation permutes the input vector in the order
-// needed for the transformation.
-func (f FFT) inputPermutation(x []complex128) {
-	y := make([]complex128, len(x))
-	copy(y, x)
-	for i := 0; i < f.N; i++ {
-		x[i] = y[f.perm[i]]
+// permutate permutes the input vector according to the permutation vector.
+// Uses an in-place algorithm that on FFT permutation vectors runs in O(N) time.
+//
+// Probably possible to speed this up with more precomputation (takes ~3/2*N rn)
+func permute(x []complex128, perm []int) {
+	n := len(x)
+	for i := 0; i < (n - 1); i++ {
+		ind := perm[i]
+		for ind < i {
+			ind = perm[ind]
+		}
+		x[i], x[ind] = x[ind], x[i]
 	}
 }
 
@@ -160,28 +185,69 @@ func (f FFT) inputPermutation(x []complex128) {
 func roots(N int) []complex128 {
 	E := make([]complex128, N)
 	for n := 0; n < N; n++ {
-		phi := -2.0 * math.Pi * float64(n) / float64(N)
-		s, c := math.Sincos(phi)
+		s, c := math.Sincos(-2.0 * math.Pi * float64(n) / float64(N))
 		E[n] = complex(c, s)
 	}
 	return E
 }
 
-// lastPow2 return the last power of 2 smaller or equal
-// to the given N, and it's base-2 logarithm.
-func lastPow2(N int) (n, p int, err error) {
-	maxdim := 1 << 20
-	if N < 2 {
-		return n, p, fmt.Errorf("fft input length must be >= 2")
-	} else if N > maxdim {
-		return n, p, fmt.Errorf("fft input length must be < %d. It is: %d", maxdim, N)
+// isPow2 returns true if N is a perfect power of 2 (1, 2, 4, 8, ...)
+// and false otherwise. Only works up to 2^30
+// Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
+func isPow2(N int) bool {
+	if N == 0 {
+		return false
 	}
-	i := 2
-	for p = 1; ; p++ {
-		j := i << 1
-		if j > N {
-			return i, p, nil
-		}
-		i = j
+	return (N & (N - 1)) == 0
+}
+
+// Pad pads x with 0s at the end into a new array of length N.
+// This does not alter x, and creates an entirely new array.
+// This should only be used as a convience function, and isn't meant for performance.
+// You should call this as few times as possible since it does potentially large allocations.
+func Pad(x []complex128, N int) []complex128 {
+	y := make([]complex128, N)
+	copy(y, x)
+	return y
+}
+
+// FastConvolve computes the discrete convolution of x and y using FFT
+// and stores the result in x, while erasing y (setting it to 0s).
+// Since this does no allocations, x and y must already be 0-padded for at least half their length.
+func FastConvolve(x, y []complex128) error {
+	if len(x) != len(y) {
+		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
 	}
+	N, E, perm, err := getVars(x)
+	if err != nil {
+		return err
+	}
+	fft(x, N, E, perm)
+	fft(y, N, E, perm)
+	for j := 0; j < N; j++ {
+		x[j] *= y[j]
+		y[j] = 0
+	}
+	ifft(x, N, E, perm)
+	return nil
+}
+
+// Float64ToComplex128Array converts a float64 array to the equivalent complex128 array
+// using an imaginary part of 0.
+func Float64ToComplex128Array(x []float64) []complex128 {
+	y := make([]complex128, len(x))
+	for i, v := range x {
+		y[i] = complex(v, 0)
+	}
+	return y
+}
+
+// Complex128ToFloat64Array converts a complex128 array to the equivalent float64 array
+// taking only the real part.
+func Complex128ToFloat64Array(x []complex128) []float64 {
+	y := make([]float64, len(x))
+	for i, v := range x {
+		y[i] = real(v)
+	}
+	return y
 }

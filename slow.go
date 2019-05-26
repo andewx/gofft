@@ -1,4 +1,4 @@
-package fft
+package gofft
 
 import (
 	"math"
