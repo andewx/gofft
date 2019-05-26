@@ -1,15 +1,15 @@
-// Package gofft provides a fast discrete Fourier transformation algorithm.
+// Package fft provides a fast discrete Fourier transformation algorithm.
 //
 // Implemented is the 1-dimensional DFT of complex input data
 // for with input lengths which are powers of 2.
 //
-// The algorithm is non-recursive and works in-place overwriting
-// the input array.
+// The algorithm is non-recursive, works in-place overwriting
+// the input array, and requires O(1) additional space.
 //
 // Before doing the transform on acutal data, allocate
-// an FFT object with fft.New(N) where N is the length of the
-// input array and a power of 2.
-// Then multiple calls to FFT(x) can be done with
+// an FFT object with t := fft.New(N) where N is the
+// length of the input array.
+// Then multiple calls to t.Transform(x) can be done with
 // different input vectors having the same length.
 package gofft
 
@@ -52,10 +52,14 @@ var (
 )
 
 // Prepare precomputes values used for FFT on a vector of length N.
-// len(x) must be a perfect power of 2, otherwise this will return an error.
+// N must be a perfect power of 2, otherwise this will return an error.
 func Prepare(N int) error {
 	if !isPow2(N) {
 		return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
+	}
+	if _, ok := Es[N]; ok {
+		// Already prepared, no need to do anything
+		return nil
 	}
 	Es[N] = roots(N)
 	perms[N] = permutationIndex(N)
@@ -189,65 +193,4 @@ func roots(N int) []complex128 {
 		E[n] = complex(c, s)
 	}
 	return E
-}
-
-// isPow2 returns true if N is a perfect power of 2 (1, 2, 4, 8, ...)
-// and false otherwise. Only works up to 2^30
-// Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-func isPow2(N int) bool {
-	if N == 0 {
-		return false
-	}
-	return (N & (N - 1)) == 0
-}
-
-// Pad pads x with 0s at the end into a new array of length N.
-// This does not alter x, and creates an entirely new array.
-// This should only be used as a convience function, and isn't meant for performance.
-// You should call this as few times as possible since it does potentially large allocations.
-func Pad(x []complex128, N int) []complex128 {
-	y := make([]complex128, N)
-	copy(y, x)
-	return y
-}
-
-// FastConvolve computes the discrete convolution of x and y using FFT
-// and stores the result in x, while erasing y (setting it to 0s).
-// Since this does no allocations, x and y must already be 0-padded for at least half their length.
-func FastConvolve(x, y []complex128) error {
-	if len(x) != len(y) {
-		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
-	}
-	N, E, perm, err := getVars(x)
-	if err != nil {
-		return err
-	}
-	fft(x, N, E, perm)
-	fft(y, N, E, perm)
-	for j := 0; j < N; j++ {
-		x[j] *= y[j]
-		y[j] = 0
-	}
-	ifft(x, N, E, perm)
-	return nil
-}
-
-// Float64ToComplex128Array converts a float64 array to the equivalent complex128 array
-// using an imaginary part of 0.
-func Float64ToComplex128Array(x []float64) []complex128 {
-	y := make([]complex128, len(x))
-	for i, v := range x {
-		y[i] = complex(v, 0)
-	}
-	return y
-}
-
-// Complex128ToFloat64Array converts a complex128 array to the equivalent float64 array
-// taking only the real part.
-func Complex128ToFloat64Array(x []complex128) []float64 {
-	y := make([]float64, len(x))
-	for i, v := range x {
-		y[i] = real(v)
-	}
-	return y
 }

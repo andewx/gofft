@@ -2,16 +2,12 @@ package gofft
 
 import (
 	ktyefft "github.com/ktye/fft"
+	dspfft "github.com/mjibson/go-dsp/fft"
 	"math/cmplx"
 	"math/rand"
 	"reflect"
 	"testing"
 )
-
-// Run the benchmark against direct implementations with:
-// go test -bench=.
-//
-// A benchmark against other more sophisticated implementations would be nice.
 
 func complexRand(N int) []complex128 {
 	x := make([]complex128, N)
@@ -54,59 +50,6 @@ func TestFFT(t *testing.T) {
 	}
 }
 
-func BenchmarkSlow000(t *testing.B) {
-	N := 1 << 13
-
-	slow := slow{}
-	x := complexRand(N)
-
-	for i := 0; i < t.N; i++ {
-		_ = slow.Transform(copyVector(x))
-	}
-}
-
-func BenchmarkSlowPre(t *testing.B) {
-	N := 1 << 13
-
-	slowPre := newSlowPre(N)
-	x := complexRand(N)
-
-	for i := 0; i < t.N; i++ {
-		_ = slowPre.Transform(copyVector(x))
-	}
-}
-
-func BenchmarkKtye(t *testing.B) {
-	N := 1 << 13
-
-	f, err := ktyefft.New(N)
-	if err != nil {
-		t.Errorf("fft.New error: %v", err)
-	}
-	x := complexRand(N)
-
-	for i := 0; i < t.N; i++ {
-		f.Transform(copyVector(x))
-	}
-}
-
-func BenchmarkFast(t *testing.B) {
-	N := 1 << 13
-
-	err := Prepare(N)
-	if err != nil {
-		t.Errorf("Prepare error: %v", err)
-	}
-	x := complexRand(N)
-
-	for i := 0; i < t.N; i++ {
-		err := FFT(copyVector(x))
-		if err != nil {
-			t.Errorf("FFT error: %v", err)
-		}
-	}
-}
-
 func TestIFFT(t *testing.T) {
 	N := 256
 	x := complexRand(N)
@@ -130,31 +73,7 @@ func TestIFFT(t *testing.T) {
 	}
 }
 
-func TestIsPow2(t *testing.T) {
-	// 1. Test all powers of 2 up to 2^30
-	for i := 0; i < 31; i++ {
-		x := 1 << uint32(i)
-		r := isPow2(x)
-		if r != true {
-			t.Errorf("isPow2(%d), got: %t, expected: %t", x, r, true)
-		}
-	}
-
-	// 2. Test all non-powers of 2 up to 2^15
-	n := 1
-	for x := 0; x < (1 << 15); x++ {
-		if x == n {
-			n <<= 1
-			continue
-		}
-		r := isPow2(x)
-		if r != false {
-			t.Errorf("isPow2(%d), got: %t, expected: %t", x, r, false)
-		}
-	}
-}
-
-func TestBitReversal(t *testing.T) {
+func TestPermutationIndex(t *testing.T) {
 	tab := [][]int{
 		[]int{0},
 		[]int{0, 1},
@@ -168,5 +87,108 @@ func TestBitReversal(t *testing.T) {
 		if !reflect.DeepEqual(got, expect) {
 			t.Errorf("%d expected: %v, got: %v\n", i, expect, got)
 		}
+	}
+}
+
+var (
+	benchmarks = []struct {
+		size int
+		name string
+	}{
+		{4, "Tiny (4)"},
+		{128, "Small (128)"},
+		{4096, "Medium (4096)"},
+		{131072, "Large (131072)"},
+		{4194304, "Huge (4194304)"},
+	}
+)
+
+func BenchmarkSlowFFT000(b *testing.B) {
+	for _, bm := range benchmarks {
+		if bm.size > 10000 {
+			// Don't run sizes too big for slow
+			continue
+		}
+		b.Run(bm.name, func(b *testing.B) {
+			slow := slow{}
+			x := complexRand(bm.size)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = slow.Transform(copyVector(x))
+			}
+		})
+	}
+}
+
+func BenchmarkSlowFFTPre(b *testing.B) {
+	for _, bm := range benchmarks {
+		if bm.size > 10000 {
+			// Don't run sizes too big for slow
+			continue
+		}
+		b.Run(bm.name, func(b *testing.B) {
+			slowPre := newSlowPre(bm.size)
+			x := complexRand(bm.size)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				_ = slowPre.Transform(copyVector(x))
+			}
+		})
+	}
+}
+
+func BenchmarkKtyeFFT(b *testing.B) {
+	for _, bm := range benchmarks {
+		if bm.size > 1048576 {
+			// Max size for ktye's fft
+			continue
+		}
+		b.Run(bm.name, func(b *testing.B) {
+			f, err := ktyefft.New(bm.size)
+			if err != nil {
+				b.Errorf("fft.New error: %v", err)
+			}
+			x := complexRand(bm.size)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				f.Transform(copyVector(x))
+			}
+		})
+	}
+}
+
+func BenchmarkDSPFFT(b *testing.B) {
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			x := complexRand(bm.size)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				dspfft.FFT(copyVector(x))
+			}
+		})
+	}
+}
+
+func BenchmarkFFT(b *testing.B) {
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			err := Prepare(bm.size)
+			if err != nil {
+				b.Errorf("Prepare error: %v", err)
+			}
+			x := complexRand(bm.size)
+
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				err := FFT(copyVector(x))
+				if err != nil {
+					b.Errorf("FFT error: %v", err)
+				}
+			}
+		})
 	}
 }
