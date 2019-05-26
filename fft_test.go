@@ -77,9 +77,9 @@ func TestPermutationIndex(t *testing.T) {
 	tab := [][]int{
 		[]int{0},
 		[]int{0, 1},
-		[]int{0, 2, 1, 3},
-		[]int{0, 4, 2, 6, 1, 5, 3, 7},
-		[]int{0, 8, 4, 12, 2, 10, 6, 14, 1, 9, 5, 13, 3, 11, 7, 15},
+		[]int{0, 2, 2, 3},
+		[]int{0, 4, 2, 6, 4, 5, 6, 7},
+		[]int{0, 8, 4, 12, 4, 10, 6, 14, 8, 9, 10, 13, 12, 13, 14, 15},
 	}
 	for i := 0; i < len(tab); i++ {
 		got := permutationIndex(1 << uint32(i))
@@ -115,7 +115,7 @@ func BenchmarkSlowFFT000(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_ = slow.Transform(copyVector(x))
+				_ = slow.Transform(x)
 			}
 		})
 	}
@@ -133,7 +133,7 @@ func BenchmarkSlowFFTPre(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_ = slowPre.Transform(copyVector(x))
+				_ = slowPre.Transform(x)
 			}
 		})
 	}
@@ -154,7 +154,7 @@ func BenchmarkKtyeFFT(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				f.Transform(copyVector(x))
+				f.Transform(x)
 			}
 		})
 	}
@@ -167,7 +167,7 @@ func BenchmarkDSPFFT(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				dspfft.FFT(copyVector(x))
+				dspfft.FFT(x)
 			}
 		})
 	}
@@ -184,7 +184,7 @@ func BenchmarkFFT(b *testing.B) {
 
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				err := FFT(copyVector(x))
+				err := FFT(x)
 				if err != nil {
 					b.Errorf("FFT error: %v", err)
 				}

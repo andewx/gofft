@@ -167,6 +167,14 @@ func permutationIndex(N int) []int {
 			index[i+n] = index[i] + 1
 		}
 	}
+	// Re-arrange the permutation to just the necessary swaps
+	for i := 0; i < (N - 1); i++ {
+		ind := index[i]
+		for ind < i {
+			ind = index[ind]
+		}
+		index[i] = ind
+	}
 	return index
 }
 
@@ -177,11 +185,7 @@ func permutationIndex(N int) []int {
 func permute(x []complex128, perm []int) {
 	n := len(x)
 	for i := 0; i < (n - 1); i++ {
-		ind := perm[i]
-		for ind < i {
-			ind = perm[ind]
-		}
-		x[i], x[ind] = x[ind], x[i]
+		x[i], x[perm[i]] = x[perm[i]], x[i]
 	}
 }
 
