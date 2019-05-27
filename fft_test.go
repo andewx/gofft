@@ -9,10 +9,18 @@ import (
 	"testing"
 )
 
+func floatRand(N int) []float64 {
+	x := make([]float64, N)
+	for i := 0; i < N; i++ {
+		x[i] = rand.NormFloat64()
+	}
+	return x
+}
+
 func complexRand(N int) []complex128 {
 	x := make([]complex128, N)
 	for i := 0; i < N; i++ {
-		x[i] = complex(2.0*rand.Float64()-1.0, 2.0*rand.Float64()-1.0)
+		x[i] = complex(rand.NormFloat64(), rand.NormFloat64())
 	}
 	return x
 }

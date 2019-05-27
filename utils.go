@@ -14,9 +14,12 @@ func isPow2(N int) bool {
 	return (N & (N - 1)) == 0
 }
 
-// nextPow2 returns the next power of 2 >= N. Only works up to 2^30
+// nextPow2 returns the smallest power of 2 >= N. Only works up to 2^30
 // Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 func nextPow2(N int) int {
+	if N == 0 {
+		return 1
+	}
 	N -= 1
 	N |= N >> 1
 	N |= N >> 2
