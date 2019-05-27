@@ -10,6 +10,9 @@ import (
 //
 // This function will call Prepare as appropriate
 func Convolve(x, y []complex128) ([]complex128, error) {
+	if len(x) == 0 && len(y) == 0 {
+		return nil, nil
+	}
 	n := len(x) + len(y) - 1
 	N := nextPow2(n)
 	x = ZeroPad(x, N)
@@ -24,6 +27,9 @@ func Convolve(x, y []complex128) ([]complex128, error) {
 // Since this does no allocations, x and y are assumed to already be 0-padded
 // for at least half their length.
 func FastConvolve(x, y []complex128) error {
+	if len(x) == 0 && len(y) == 0 {
+		return nil
+	}
 	if len(x) != len(y) {
 		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
 	}
