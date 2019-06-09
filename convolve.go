@@ -56,18 +56,23 @@ func FastConvolve(x, y []complex128) error {
 func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	arraysByLength := map[int][][]complex128{}
 	mx := 1
+	returnLength := 1
 	for _, x := range X {
-		// Pad out each array to the next power of twice the length
+		// Pad out each array to the next power of two after twice the length
 		// Doubling the length gives a buffer-zone for convolve to write to
 		n := nextPow2(2 * len(x))
 		arraysByLength[n] = append(arraysByLength[n], ZeroPad(x, n))
 		if n > mx {
 			mx = n
 		}
+		returnLength += len(x) - 1
+	}
+	if returnLength <= 0 {
+		return nil, nil
 	}
 	// For each successive power of 2, convolve the entries in pairs up to the
 	// next power of 2
-	for i := 1; i <= mx; i++ {
+	for i := 1; i <= mx; i *= 2 {
 		arrays := arraysByLength[i]
 		if len(arrays) > 0 {
 			// Prepare and grab the resuling variables
@@ -84,18 +89,25 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 				// just convolve together and return
 				if len(arrays) == 2 {
 					convolve(arrays[0], arrays[1], N, E, perm)
-					break // Leave the for loop and return
+					return arrays[0][:returnLength], nil
+				}
+				if len(arrays) == 1 {
+					return arrays[0][:returnLength], nil
 				}
 				// If everything has ended up on the same length,
 				// just use FastMultiConvolve and return
-				data := make([]complex128, len(arrays)*i)
+				n2 := nextPow2(len(arrays))
+				data := make([]complex128, n2*N)
 				for j, array := range arrays {
 					copy(data[N*j:], array)
 				}
+				for j := len(arrays); j < n2; j++ {
+					data[N*j] = 1.0
+				}
 				err := FastMultiConvolve(data, N, false)
-				return data, err
+				return data[:returnLength], err
 			}
-			for j := 0; j < len(arrays); j++ {
+			for j := 0; j < len(arrays); j += 2 {
 				if j+1 < len(arrays) {
 					// For every pair, convolve to a single array
 					convolve(arrays[j], arrays[j+1], N, E, perm)
@@ -112,7 +124,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 		arraysByLength[i] = nil
 		delete(arraysByLength, i)
 	}
-	return arraysByLength[mx][0], nil
+	return arraysByLength[mx][0][:returnLength], nil
 }
 
 // FastMultiConvolve computes the discrete convolution of many arrays using a
