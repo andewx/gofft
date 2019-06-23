@@ -1,4 +1,4 @@
-# gofft [![GoDoc](https://godoc.org/github.com/argusdusty/gofft?status.svg)](https://godoc.org/github.com/argusdusty/gofft) [![BuildStatus](https://travis-ci.org/argusdusty/gofft.svg?branch=master)](https://travis-ci.org/argusdusty/gofft) [![ReportCard](https://goreportcard.com/badge/github.com/argusdusty/gofft)](https://goreportcard.com/report/github.com/argusdusty/gofft)
+# gofft [![GoDoc](https://godoc.org/github.com/argusdusty/gofft?status.svg)](https://godoc.org/github.com/argusdusty/gofft) [![Build Status](https://travis-ci.org/argusdusty/gofft.svg?branch=master)](https://travis-ci.org/argusdusty/gofft) [![Report Card](https://goreportcard.com/badge/github.com/argusdusty/gofft)](https://goreportcard.com/report/github.com/argusdusty/gofft)
 A better radix-2 fast Fourier transform in Go.
 
 Package gofft provides an efficient radix-2 fast discrete Fourier transformation algorithm in pure Go.
