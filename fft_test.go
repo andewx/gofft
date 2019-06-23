@@ -162,6 +162,7 @@ func BenchmarkSlowFFT000(b *testing.B) {
 			continue
 		}
 		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
 			slow := slow{}
 			x := complexRand(bm.size)
 
@@ -180,6 +181,7 @@ func BenchmarkSlowFFTPre(b *testing.B) {
 			continue
 		}
 		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
 			slowPre := newSlowPre(bm.size)
 			x := complexRand(bm.size)
 
@@ -198,6 +200,7 @@ func BenchmarkKtyeFFT(b *testing.B) {
 			continue
 		}
 		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
 			f, err := ktyefft.New(bm.size)
 			if err != nil {
 				b.Errorf("fft.New error: %v", err)
@@ -212,9 +215,10 @@ func BenchmarkKtyeFFT(b *testing.B) {
 	}
 }
 
-func BenchmarkDSPFFT(b *testing.B) {
+func BenchmarkGoDSPFFT(b *testing.B) {
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
 			x := complexRand(bm.size)
 
 			b.ResetTimer()
@@ -228,6 +232,7 @@ func BenchmarkDSPFFT(b *testing.B) {
 func BenchmarkFFT(b *testing.B) {
 	for _, bm := range benchmarks {
 		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
 			err := Prepare(bm.size)
 			if err != nil {
 				b.Errorf("Prepare error: %v", err)

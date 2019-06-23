@@ -4,19 +4,19 @@ import (
 	"math"
 )
 
-// isPow2 returns true if N is a perfect power of 2 (1, 2, 4, 8, ...)
+// IsPow2 returns true if N is a perfect power of 2 (1, 2, 4, 8, ...)
 // and false otherwise. Only works up to 2^30
 // Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#DetermineIfPowerOf2
-func isPow2(N int) bool {
+func IsPow2(N int) bool {
 	if N == 0 {
 		return false
 	}
 	return (N & (N - 1)) == 0
 }
 
-// nextPow2 returns the smallest power of 2 >= N. Only works up to 2^30
+// NextPow2 returns the smallest power of 2 >= N. Only works up to 2^30
 // Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
-func nextPow2(N int) int {
+func NextPow2(N int) int {
 	if N == 0 {
 		return 1
 	}
@@ -34,6 +34,17 @@ func nextPow2(N int) int {
 // This should only be used as a convience function, and isn't meant for performance.
 // You should call this as few times as possible since it does potentially large allocations.
 func ZeroPad(x []complex128, N int) []complex128 {
+	y := make([]complex128, N)
+	copy(y, x)
+	return y
+}
+
+// ZeroPadToNextPow2 pads x with 0s at the end into a new array of length 2^N >= len(x)
+// This does not alter x, and creates an entirely new array.
+// This should only be used as a convience function, and isn't meant for performance.
+// You should call this as few times as possible since it does potentially large allocations.
+func ZeroPadToNextPow2(x []complex128) []complex128 {
+	N := NextPow2(len(x))
 	y := make([]complex128, N)
 	copy(y, x)
 	return y

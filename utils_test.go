@@ -10,9 +10,9 @@ func TestIsPow2(t *testing.T) {
 	// 1. Test all powers of 2 up to 2^30
 	for i := 0; i < 31; i++ {
 		x := 1 << uint32(i)
-		r := isPow2(x)
+		r := IsPow2(x)
 		if r != true {
-			t.Errorf("isPow2(%d), got: %t, expected: %t", x, r, true)
+			t.Errorf("IsPow2(%d), got: %t, expected: %t", x, r, true)
 		}
 	}
 
@@ -23,9 +23,9 @@ func TestIsPow2(t *testing.T) {
 			n <<= 1
 			continue
 		}
-		r := isPow2(x)
+		r := IsPow2(x)
 		if r != false {
-			t.Errorf("isPow2(%d), got: %t, expected: %t", x, r, false)
+			t.Errorf("IsPow2(%d), got: %t, expected: %t", x, r, false)
 		}
 	}
 }
@@ -34,21 +34,21 @@ func TestNextPow2(t *testing.T) {
 	for i := 0; i < 30; i++ {
 		// 1. Test all powers of 2 up to 2^29
 		x := 1 << uint32(i)
-		r := nextPow2(x)
+		r := NextPow2(x)
 		if r != x {
-			t.Errorf("nextPow2(%d), got: %d, expected: %d", x, r, x)
+			t.Errorf("NextPow2(%d), got: %d, expected: %d", x, r, x)
 		}
 		// 2. Test powers of 2 plus one
-		r = nextPow2(x + 1)
+		r = NextPow2(x + 1)
 		if r != 2*x {
-			t.Errorf("nextPow2(%d+1), got: %d, expected: %d", x, r, 2*x)
+			t.Errorf("NextPow2(%d+1), got: %d, expected: %d", x, r, 2*x)
 		}
 		// 3. Test random number between here and next power of 2
 		if x > 1 {
 			n := rand.Intn(x-1) + 1
-			r = nextPow2(x + n)
+			r = NextPow2(x + n)
 			if r != 2*x {
-				t.Errorf("nextPow2(%d+%d), got: %d, expected: %d", x, n, r, 2*x)
+				t.Errorf("NextPow2(%d+%d), got: %d, expected: %d", x, n, r, 2*x)
 			}
 		}
 	}

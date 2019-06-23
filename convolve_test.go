@@ -43,7 +43,7 @@ func TestConvolve(t *testing.T) {
 
 func TestFastConvolve(t *testing.T) {
 	for i := 1; i < 500; i++ {
-		N := nextPow2(2 * i)
+		N := NextPow2(2 * i)
 		err := Prepare(N)
 		if err != nil {
 			t.Error(err)
@@ -113,12 +113,12 @@ func TestMultiConvolve(t *testing.T) {
 func TestFastMultiConvolve(t *testing.T) {
 	for i := 1; i < 25; i++ {
 		X1 := make([][]complex128, i)
-		n := nextPow2(i)
+		n := NextPow2(i)
 		for j := 1; j < 25; j++ {
 			// Error propagates on the order of i^j
 			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-11
 			// i arrays of length j
-			m := nextPow2(2 * j)
+			m := NextPow2(2 * j)
 			X2 := make([]complex128, n*m)
 			for k := 0; k < i; k++ {
 				X1[k] = complexRand(j)

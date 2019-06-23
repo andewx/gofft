@@ -14,7 +14,7 @@ func Convolve(x, y []complex128) ([]complex128, error) {
 		return nil, nil
 	}
 	n := len(x) + len(y) - 1
-	N := nextPow2(n)
+	N := NextPow2(n)
 	x = ZeroPad(x, N)
 	y = ZeroPad(y, N)
 	Prepare(N)
@@ -60,7 +60,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	for _, x := range X {
 		// Pad out each array to the next power of two after twice the length
 		// Doubling the length gives a buffer-zone for convolve to write to
-		n := nextPow2(2 * len(x))
+		n := NextPow2(2 * len(x))
 		arraysByLength[n] = append(arraysByLength[n], ZeroPad(x, n))
 		if n > mx {
 			mx = n
@@ -96,7 +96,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 				}
 				// If everything has ended up on the same length,
 				// just use FastMultiConvolve and return
-				n2 := nextPow2(len(arrays))
+				n2 := NextPow2(len(arrays))
 				data := make([]complex128, n2*N)
 				for j, array := range arrays {
 					copy(data[N*j:], array)
@@ -145,10 +145,10 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 	if N%n != 0 {
 		return fmt.Errorf("X must be array of arrays each of length n, instead have len(X) %d not divisible by n (%d)", N, n)
 	}
-	if !isPow2(n) {
+	if !IsPow2(n) {
 		return fmt.Errorf("X must be array of arrays each of a power of 2 length, instead have length %d not a power of 2", n)
 	}
-	if !isPow2(N / n) {
+	if !IsPow2(N / n) {
 		return fmt.Errorf("X must be array of arrays of a power of 2 length, instead have length %d not a power of 2", N/n)
 	}
 	for ; n != N; n <<= 1 {
