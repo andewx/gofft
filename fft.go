@@ -1,4 +1,4 @@
-// Package fft provides a fast discrete Fourier transformation algorithm.
+// Package gofft provides a fast discrete Fourier transformation algorithm.
 //
 // Implemented is the 1-dimensional DFT of complex input data
 // for with input lengths which are powers of 2.
@@ -7,8 +7,8 @@
 // the input array, and requires O(1) additional space.
 //
 // Before doing the transform on acutal data, prepare the fft with
-// t := fft.Prepare(N) where N is the length of the input array.
-// Then multiple calls to fft.FFT(x) can be done with
+// t := gofft.Prepare(N) where N is the length of the input array.
+// Then multiple calls to gofft.FFT(x) can be done with
 // different input vectors having the same length.
 package gofft
 
