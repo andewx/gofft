@@ -3,6 +3,7 @@ package gofft
 import (
 	"math"
 	"math/cmplx"
+	"math/rand"
 	"testing"
 )
 
@@ -87,11 +88,11 @@ func TestMultiConvolve(t *testing.T) {
 	for i := 1; i < 25; i++ {
 		X := make([][]complex128, i)
 		for j := 1; j < 25; j++ {
-			// Error propagates on the order of i^j
-			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-11
-			// i arrays of length j
+			// Error propagates on the order of j^i
+			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-10
+			// i arrays of length random(1, j)
 			for k := 0; k < i; k++ {
-				X[k] = complexRand(j)
+				X[k] = complexRand(rand.Intn(j) + 1)
 			}
 			r1 := slowMultiConvolve(X)
 			r2, err := MultiConvolve(X...)
@@ -115,8 +116,8 @@ func TestFastMultiConvolve(t *testing.T) {
 		X1 := make([][]complex128, i)
 		n := NextPow2(i)
 		for j := 1; j < 25; j++ {
-			// Error propagates on the order of i^j
-			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-11
+			// Error propagates on the order of j^i
+			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-10
 			// i arrays of length j
 			m := NextPow2(2 * j)
 			X2 := make([]complex128, n*m)
@@ -127,8 +128,14 @@ func TestFastMultiConvolve(t *testing.T) {
 			for k := i; k < n; k++ {
 				X2[m*k] = 1.0
 			}
+			X3 := make([]complex128, n*m)
+			copy(X3, X2)
 			r1 := slowMultiConvolve(X1)
 			err := FastMultiConvolve(X2, m, false)
+			if err != nil {
+				t.Error(err)
+			}
+			err = FastMultiConvolve(X3, m, true)
 			if err != nil {
 				t.Error(err)
 			}
@@ -136,9 +143,16 @@ func TestFastMultiConvolve(t *testing.T) {
 			if len(r1) != len(r2) {
 				t.Errorf("slowMultiConvolve and FastMultiConvolve differ in length: len(r1)=%d, len(r2)=%d", len(r1), len(r2))
 			}
+			r3 := X3[:i*(j-1)+1]
+			if len(r2) != len(r3) {
+				t.Errorf("FastMultiConvolve multithreaded difference in length: len(r2)=%d, len(r3)=%d", len(r2), len(r3))
+			}
 			for k := 0; k < len(r1); k++ {
 				if e := cmplx.Abs(r1[k] - r2[k]); e > error_threshold {
 					t.Errorf("slowMultiConvolve and FastMultiConvolve differ: r1[%d]=%v, r2[%d]=%v, diff=%v, i=%d, j=%d", k, r1[k], k, r2[k], e, i, j)
+				}
+				if e := cmplx.Abs(r2[k] - r3[k]); e > error_threshold {
+					t.Errorf("FastMultiConvolve multithreaded difference: r2[%d]=%v, r3[%d]=%v, diff=%v, i=%d, j=%d", k, r2[k], k, r3[k], e, i, j)
 				}
 			}
 		}

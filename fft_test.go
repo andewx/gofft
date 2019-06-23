@@ -7,14 +7,13 @@ import (
 	"math/cmplx"
 	"math/rand"
 	"reflect"
+	"runtime"
+	"sync/atomic"
 	"testing"
 )
 
 // Slow is the simplest and slowest FFT transform, for testing purposes
-type slow struct {
-}
-
-func (s slow) Transform(x []complex128) []complex128 {
+func slowFFT(x []complex128) []complex128 {
 	N := len(x)
 	y := make([]complex128, N)
 	for k := 0; k < N; k++ {
@@ -22,32 +21,6 @@ func (s slow) Transform(x []complex128) []complex128 {
 			phi := -2.0 * math.Pi * float64(k*n) / float64(N)
 			s, c := math.Sincos(phi)
 			y[k] += x[n] * complex(c, s)
-		}
-	}
-	return y
-}
-
-// SlowPre uses a precomputed roots table.
-type slowPre struct {
-	E []complex128
-	N int
-}
-
-func newSlowPre(N int) slowPre {
-	var s slowPre
-	s.E = roots(N)
-	s.N = N
-	return s
-}
-
-func (s slowPre) Transform(x []complex128) []complex128 {
-	if len(x) != len(s.E) {
-		panic("SlowPre has been initialized with a long length, or not at all.")
-	}
-	y := make([]complex128, s.N)
-	for k := 0; k < s.N; k++ {
-		for n := 0; n < s.N; n++ {
-			y[k] += x[n] * s.E[k*n%s.N]
 		}
 	}
 	return y
@@ -78,26 +51,20 @@ func copyVector(v []complex128) []complex128 {
 func TestFFT(t *testing.T) {
 	N := 1 << 10
 	x := complexRand(N)
-	slow := slow{}
-	slowPre := newSlowPre(N)
 	err := Prepare(N)
 	if err != nil {
 		t.Errorf("Prepare error: %v", err)
 	}
 
-	y1 := slow.Transform(copyVector(x))
-	y2 := slowPre.Transform(copyVector(x))
-	y3 := copyVector(x)
-	err = FFT(y3)
+	y1 := slowFFT(copyVector(x))
+	y2 := copyVector(x)
+	err = FFT(y2)
 	if err != nil {
 		t.Errorf("FFT error: %v", err)
 	}
 	for i := 0; i < N; i++ {
 		if e := cmplx.Abs(y1[i] - y2[i]); e > 1E-9 {
-			t.Errorf("slow and slowPre differ: i=%d diff=%v\n", i, e)
-		}
-		if e := cmplx.Abs(y1[i] - y3[i]); e > 1E-9 {
-			t.Errorf("slow and fast differ: i=%d diff=%v\n", i, e)
+			t.Errorf("slowFFT and FFT differ: i=%d diff=%v\n", i, e)
 		}
 	}
 }
@@ -155,39 +122,19 @@ var (
 	}
 )
 
-func BenchmarkSlowFFT000(b *testing.B) {
+func BenchmarkSlowFFT(b *testing.B) {
 	for _, bm := range benchmarks {
 		if bm.size > 10000 {
 			// Don't run sizes too big for slow
 			continue
 		}
+		x := complexRand(bm.size)
+
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
-			slow := slow{}
-			x := complexRand(bm.size)
-
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				_ = slow.Transform(x)
-			}
-		})
-	}
-}
-
-func BenchmarkSlowFFTPre(b *testing.B) {
-	for _, bm := range benchmarks {
-		if bm.size > 10000 {
-			// Don't run sizes too big for slow
-			continue
-		}
-		b.Run(bm.name, func(b *testing.B) {
-			b.SetBytes(int64(bm.size * 16))
-			slowPre := newSlowPre(bm.size)
-			x := complexRand(bm.size)
-
-			b.ResetTimer()
-			for i := 0; i < b.N; i++ {
-				_ = slowPre.Transform(x)
+				slowFFT(x)
 			}
 		})
 	}
@@ -199,14 +146,14 @@ func BenchmarkKtyeFFT(b *testing.B) {
 			// Max size for ktye's fft
 			continue
 		}
+		f, err := ktyefft.New(bm.size)
+		if err != nil {
+			b.Errorf("fft.New error: %v", err)
+		}
+		x := complexRand(bm.size)
+
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
-			f, err := ktyefft.New(bm.size)
-			if err != nil {
-				b.Errorf("fft.New error: %v", err)
-			}
-			x := complexRand(bm.size)
-
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				f.Transform(x)
@@ -217,10 +164,11 @@ func BenchmarkKtyeFFT(b *testing.B) {
 
 func BenchmarkGoDSPFFT(b *testing.B) {
 	for _, bm := range benchmarks {
+		dspfft.EnsureRadix2Factors(bm.size)
+		x := complexRand(bm.size)
+
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
-			x := complexRand(bm.size)
-
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				dspfft.FFT(x)
@@ -231,21 +179,45 @@ func BenchmarkGoDSPFFT(b *testing.B) {
 
 func BenchmarkFFT(b *testing.B) {
 	for _, bm := range benchmarks {
+		x := complexRand(bm.size)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
-			err := Prepare(bm.size)
-			if err != nil {
-				b.Errorf("Prepare error: %v", err)
-			}
-			x := complexRand(bm.size)
-
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				err := FFT(x)
+				FFT(x)
 				if err != nil {
 					b.Errorf("FFT error: %v", err)
 				}
 			}
+		})
+	}
+}
+
+func BenchmarkFFTParallel(b *testing.B) {
+	for _, bm := range benchmarks {
+		procs := runtime.GOMAXPROCS(0)
+		x := complexRand(bm.size * procs)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			var idx uint64
+			b.SetBytes(int64(bm.size * 16))
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := int(atomic.AddUint64(&idx, 1) - 1)
+				y := x[i*bm.size : (i+1)*bm.size]
+				for pb.Next() {
+					FFT(y)
+				}
+			})
 		})
 	}
 }

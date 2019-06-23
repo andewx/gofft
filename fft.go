@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	Es    = map[int][]complex128{}
-	perms = map[int][]int{}
+	factorsMap = map[int][]complex128{}
+	permMap    = map[int][]int{}
 )
 
 // Prepare precomputes values used for FFT on a vector of length N.
@@ -28,19 +28,19 @@ func Prepare(N int) error {
 	if !IsPow2(N) {
 		return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
 	}
-	if _, ok := Es[N]; ok {
+	if _, ok := factorsMap[N]; ok {
 		// Already prepared, no need to do anything
 		return nil
 	}
-	Es[N] = roots(N)
-	perms[N] = permutationIndex(N)
+	factorsMap[N] = roots(N)
+	permMap[N] = permutationIndex(N)
 	return nil
 }
 
 // checkN tests N as being a valid FFT vector length.
 // Returns an error if it isn't.
 func checkN(N int) error {
-	if _, ok := Es[N]; !ok {
+	if _, ok := factorsMap[N]; !ok {
 		if !IsPow2(N) {
 			return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
 		}
@@ -55,11 +55,11 @@ func checkN(N int) error {
 // len(x) must be a perfect power of 2, otherwise this will return an error.
 // You must call Prepare(len(x)) before this, otherwise this will return an error.
 func FFT(x []complex128) error {
-	N, E, perm, err := getVars(x)
+	N, factors, perm, err := getVars(x)
 	if err != nil {
 		return err
 	}
-	fft(x, N, E, perm)
+	fft(x, N, factors, perm)
 	return nil
 }
 
@@ -69,58 +69,63 @@ func FFT(x []complex128) error {
 // len(x) must be a perfect power of 2, otherwise this will return an error.
 // You must call Prepare(len(x)) before this, otherwise this will return an error.
 func IFFT(x []complex128) error {
-	N, E, perm, err := getVars(x)
+	N, factors, perm, err := getVars(x)
 	if err != nil {
 		return err
 	}
-	ifft(x, N, E, perm)
+	ifft(x, N, factors, perm)
 	return nil
 }
 
 // Pre-load the fft variables for later use.
-func getVars(x []complex128) (N int, E []complex128, perm []int, err error) {
+func getVars(x []complex128) (N int, factors []complex128, perm []int, err error) {
 	N = len(x)
-	E = Es[N]
-	perm = perms[N]
+	factors = factorsMap[N]
+	perm = permMap[N]
 	err = checkN(N)
 	return
 }
 
 // fft does the actual work for FFT
-func fft(x []complex128, N int, E []complex128, perm []int) {
+func fft(x []complex128, N int, factors []complex128, perm []int) {
 	// Handle small N quickly
 	switch N {
 	case 1:
 		return
 	case 2:
-		x[0], x[1] = x[0]+E[0]*x[1], x[0]+E[1]*x[1]
+		f := factors[0] * x[1]
+		x[0], x[1] = x[0]+f, x[0]-f
 		return
 	case 4:
 		x[1], x[2] = x[2], x[1]
-		x[0], x[1] = x[0]+E[0]*x[1], x[0]+E[2]*x[1]
-		x[2], x[3] = x[2]+E[0]*x[3], x[2]+E[2]*x[3]
-		x[0], x[2] = x[0]+E[0]*x[2], x[0]+E[2]*x[2]
-		x[1], x[3] = x[1]+E[1]*x[3], x[1]+E[3]*x[3]
+		f := factors[0] * x[1]
+		x[0], x[1] = x[0]+f, x[0]-f
+		f = factors[0] * x[3]
+		x[2], x[3] = x[2]+f, x[2]-f
+		f = factors[0] * x[2]
+		x[0], x[2] = x[0]+f, x[0]-f
+		f = factors[1] * x[3]
+		x[1], x[3] = x[1]+f, x[1]-f
 		return
 	}
 	// Reorder the input array.
 	permute(x, perm, N)
 	// Butterfly
 	s := N
-	E2 := E[N>>1:]
 	for n := 1; n < N; n <<= 1 {
 		s >>= 1
 		for o := 0; o < N; o += (n << 1) {
 			for k := 0; k < n; k++ {
 				i := k + o
-				x[i], x[i+n] = x[i]+E[k*s]*x[i+n], x[i]+E2[k*s]*x[i+n]
+				f := factors[k*s] * x[i+n]
+				x[i], x[i+n] = x[i]+f, x[i]-f
 			}
 		}
 	}
 }
 
 // ifft does the actual work for IFFT
-func ifft(x []complex128, N int, E []complex128, perm []int) {
+func ifft(x []complex128, N int, factors []complex128, perm []int) {
 	// Reverse the input vector
 	for i := 1; i < N/2; i++ {
 		j := N - i
@@ -128,7 +133,7 @@ func ifft(x []complex128, N int, E []complex128, perm []int) {
 	}
 
 	// Do the transform.
-	fft(x, N, E, perm)
+	fft(x, N, factors, perm)
 
 	// Scale the output by 1/N
 	invN := complex(1.0/float64(N), 0)
@@ -172,10 +177,10 @@ func permute(x []complex128, perm []int, N int) {
 
 // roots computes the complex-roots-of 1 table of length N.
 func roots(N int) []complex128 {
-	E := make([]complex128, N)
-	for n := 0; n < N; n++ {
+	factors := make([]complex128, N/2)
+	for n := 0; n < N/2; n++ {
 		s, c := math.Sincos(-2.0 * math.Pi * float64(n) / float64(N))
-		E[n] = complex(c, s)
+		factors[n] = complex(c, s)
 	}
-	return E
+	return factors
 }
