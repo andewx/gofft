@@ -89,7 +89,7 @@ func TestMultiConvolve(t *testing.T) {
 		X := make([][]complex128, i)
 		for j := 1; j < 25; j++ {
 			// Error propagates on the order of j^i
-			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-10
+			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1E-10
 			// i arrays of length random(1, j)
 			for k := 0; k < i; k++ {
 				X[k] = complexRand(rand.Intn(j) + 1)
@@ -103,7 +103,7 @@ func TestMultiConvolve(t *testing.T) {
 				t.Errorf("slowMultiConvolve and MultiConvolve differ in length: len(r1)=%d, len(r2)=%d", len(r1), len(r2))
 			}
 			for k := 0; k < len(r1); k++ {
-				if e := cmplx.Abs(r1[k] - r2[k]); e > error_threshold {
+				if e := cmplx.Abs(r1[k] - r2[k]); e > errorThreshold {
 					t.Errorf("slowMultiConvolve and MultiConvolve differ: r1[%d]=%v, r2[%d]=%v, diff=%v, i=%d, j=%d", k, r1[k], k, r2[k], e, i, j)
 				}
 			}
@@ -117,7 +117,7 @@ func TestFastMultiConvolve(t *testing.T) {
 		n := NextPow2(i)
 		for j := 1; j < 25; j++ {
 			// Error propagates on the order of j^i
-			error_threshold := math.Pow(float64(j), float64(i)-1) * 1E-10
+			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1E-10
 			// i arrays of length j
 			m := NextPow2(2 * j)
 			X2 := make([]complex128, n*m)
@@ -148,10 +148,10 @@ func TestFastMultiConvolve(t *testing.T) {
 				t.Errorf("FastMultiConvolve multithreaded difference in length: len(r2)=%d, len(r3)=%d", len(r2), len(r3))
 			}
 			for k := 0; k < len(r1); k++ {
-				if e := cmplx.Abs(r1[k] - r2[k]); e > error_threshold {
+				if e := cmplx.Abs(r1[k] - r2[k]); e > errorThreshold {
 					t.Errorf("slowMultiConvolve and FastMultiConvolve differ: r1[%d]=%v, r2[%d]=%v, diff=%v, i=%d, j=%d", k, r1[k], k, r2[k], e, i, j)
 				}
-				if e := cmplx.Abs(r2[k] - r3[k]); e > error_threshold {
+				if e := cmplx.Abs(r2[k] - r3[k]); e > errorThreshold {
 					t.Errorf("FastMultiConvolve multithreaded difference: r2[%d]=%v, r3[%d]=%v, diff=%v, i=%d, j=%d", k, r2[k], k, r3[k], e, i, j)
 				}
 			}

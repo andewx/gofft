@@ -94,11 +94,11 @@ func TestIFFT(t *testing.T) {
 
 func TestPermutationIndex(t *testing.T) {
 	tab := [][]int{
-		[]int{0},
-		[]int{0, 1},
-		[]int{0, 2, 2, 3},
-		[]int{0, 4, 2, 6, 4, 5, 6, 7},
-		[]int{0, 8, 4, 12, 4, 10, 6, 14, 8, 9, 10, 13, 12, 13, 14, 15},
+		{0},
+		{0, 1},
+		{0, 2, 2, 3},
+		{0, 4, 2, 6, 4, 5, 6, 7},
+		{0, 8, 4, 12, 4, 10, 6, 14, 8, 9, 10, 13, 12, 13, 14, 15},
 	}
 	for i := 0; i < len(tab); i++ {
 		got := permutationIndex(1 << uint32(i))

@@ -85,27 +85,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 				return nil, err
 			}
 			if len(arraysByLength) == 1 {
-				// If this is the final level, no need for further allocations,
-				// just convolve together and return
-				if len(arrays) == 2 {
-					convolve(arrays[0], arrays[1], N, factors, perm)
-					return arrays[0][:returnLength], nil
-				}
-				if len(arrays) == 1 {
-					return arrays[0][:returnLength], nil
-				}
-				// If everything has ended up on the same length,
-				// just use FastMultiConvolve and return
-				n2 := NextPow2(len(arrays))
-				data := make([]complex128, n2*N)
-				for j, array := range arrays {
-					copy(data[N*j:], array)
-				}
-				for j := len(arrays); j < n2; j++ {
-					data[N*j] = 1.0
-				}
-				err := FastMultiConvolve(data, N, false)
-				return data[:returnLength], err
+				return multiConvolveSingleLevel(arrays, N, factors, perm, returnLength)
 			}
 			for j := 0; j < len(arrays); j += 2 {
 				if j+1 < len(arrays) {
@@ -116,6 +96,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 				arraysByLength[2*i] = append(arraysByLength[2*i], ZeroPad(arrays[j], 2*i))
 				if 2*i > mx {
 					// Increase the max length as necessary
+					// Shouldn't be possible to reach this, thanks to multiConvolveSingleLevel.
 					mx = 2 * i
 				}
 			}
@@ -124,7 +105,32 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 		arraysByLength[i] = nil
 		delete(arraysByLength, i)
 	}
+	// Shouldn't be possible to reach this, but compiler needs it just in case.
 	return arraysByLength[mx][0][:returnLength], nil
+}
+
+func multiConvolveSingleLevel(arrays [][]complex128, N int, factors []complex128, perm []int, returnLength int) ([]complex128, error) {
+	// If this is the final level, no need for further allocations,
+	// just convolve together and return
+	if len(arrays) == 2 {
+		convolve(arrays[0], arrays[1], N, factors, perm)
+		return arrays[0][:returnLength], nil
+	}
+	if len(arrays) == 1 {
+		return arrays[0][:returnLength], nil
+	}
+	// If everything has ended up on the same length,
+	// just use FastMultiConvolve and return
+	n2 := NextPow2(len(arrays))
+	data := make([]complex128, n2*N)
+	for j, array := range arrays {
+		copy(data[N*j:], array)
+	}
+	for j := len(arrays); j < n2; j++ {
+		data[N*j] = 1.0
+	}
+	err := FastMultiConvolve(data, N, false)
+	return data[:returnLength], err
 }
 
 // FastMultiConvolve computes the discrete convolution of many arrays using a
