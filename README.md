@@ -10,11 +10,11 @@ The algorithm is non-recursive, works in-place overwriting the input array, and 
 ## What
 I took [an existing](https://github.com/ktye/fft) FFT implementation in Go, cleaned and improved the code API and performance, and replaced the permutation step with an algorithm that works with no temp array.
 
-Performance was nearly doubled over the original code, and is many times faster than go-dsp for small inputs (see benchmarks in fft_test).
+Performance was more than doubled over the original code, and is consistently the fastest Go FFT library (see benchmarks below)
 
 Added convolution functions `Convolve(x, y)`, `FastConvolve(x, y)`, `MultiConvolve(x...)`, `FastMultiConvolve(X)`, which implement the discrete convolution and a new hierarchical convolution algorithm that has utility in a number of CS problems. This computes the convolution of many arrays in O(n\*ln(n)<sup>2</sup>) run time, and in the case of FastMultiConvolve O(1) additional space.
 
-Also included a new utility functions: `ZeroPad(x, N)`, `Float64ToComplex128Array`, and `Complex128ToFloat64Array` which are self-documenting.
+Also included new utility functions: `IsPow2`, `NextPow2`, `ZeroPad`, `ZeroPadToNextPow2`, `Float64ToComplex128Array`, `Complex128ToFloat64Array`, and `RoundFloat64Array`
 
 ## Why
 Most existing FFT libraries in Go allocate temporary arrays with O(N) additional space. This is less-than-ideal when you have arrays of length of 2<sup>25</sup> or more, where you quickly end up allocating gigabytes of data and dragging down the FFT calculation to a halt.
@@ -37,7 +37,6 @@ import (
 func main() {
 	// Do an FFT and IFFT and get the same result
 	testArray := gofft.Float64ToComplex128Array([]float64{1, 2, 3, 4, 5, 6, 7, 8})
-	gofft.Prepare(len(testArray))
 	err := gofft.FFT(testArray)
 	if err != nil {
 		panic(err)

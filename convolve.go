@@ -7,8 +7,6 @@ import (
 
 // Convolve computes the discrete convolution of x and y using FFT.
 // Pads x and y to the next power of 2 from len(x)+len(y)-1
-//
-// This function will call Prepare as appropriate
 func Convolve(x, y []complex128) ([]complex128, error) {
 	if len(x) == 0 && len(y) == 0 {
 		return nil, nil
@@ -17,7 +15,6 @@ func Convolve(x, y []complex128) ([]complex128, error) {
 	N := NextPow2(n)
 	x = ZeroPad(x, N)
 	y = ZeroPad(y, N)
-	Prepare(N)
 	err := FastConvolve(x, y)
 	return x[:n], err
 }
@@ -51,8 +48,6 @@ func FastConvolve(x, y []complex128) error {
 // below, but has a smart planner that handles disproportionate array sizes
 // very well. If all your arrays are the same length, FastMultiConvolve
 // will be much faster.
-//
-// This function will call Prepare as appropriate
 func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	arraysByLength := map[int][][]complex128{}
 	mx := 1
@@ -75,11 +70,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	for i := 1; i <= mx; i *= 2 {
 		arrays := arraysByLength[i]
 		if len(arrays) > 0 {
-			// Prepare and grab the resuling variables
-			err := Prepare(i)
-			if err != nil {
-				return nil, err
-			}
+			// Grab the FFT variables
 			N, factors, perm, err := getVars(arrays[0])
 			if err != nil {
 				return nil, err
@@ -144,8 +135,6 @@ func multiConvolveSingleLevel(arrays [][]complex128, N int, factors []complex128
 // multithread tells the algorithm to use goroutines,
 // which can slow things down for small N.
 // Takes O(N*log(N)^2) run time and O(1) additional space.
-//
-// Before calling this, you must call Prepare on every power of 2 up to N
 func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 	N := len(X)
 	if N%n != 0 {

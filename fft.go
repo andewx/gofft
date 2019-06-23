@@ -5,21 +5,18 @@
 //
 // The algorithm is non-recursive, works in-place overwriting
 // the input array, and requires O(1) additional space.
-//
-// Before doing the transform on acutal data, prepare the fft with
-// t := gofft.Prepare(N) where N is the length of the input array.
-// Then multiple calls to gofft.FFT(x) can be done with
-// different input vectors having the same length.
 package gofft
 
 import (
 	"fmt"
 	"math"
+	"sync"
 )
 
 var (
-	factorsMap = map[int][]complex128{}
-	permMap    = map[int][]int{}
+	prepareLock sync.RWMutex
+	factorsMap  = map[int][]complex128{}
+	permMap     = map[int][]int{}
 )
 
 // Prepare precomputes values used for FFT on a vector of length N.
@@ -28,24 +25,17 @@ func Prepare(N int) error {
 	if !IsPow2(N) {
 		return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
 	}
+	prepareLock.RLock()
 	if _, ok := factorsMap[N]; ok {
+		prepareLock.RUnlock()
 		// Already prepared, no need to do anything
 		return nil
 	}
+	prepareLock.RUnlock()
+	prepareLock.Lock()
+	defer prepareLock.Unlock()
 	factorsMap[N] = roots(N)
 	permMap[N] = permutationIndex(N)
-	return nil
-}
-
-// checkN tests N as being a valid FFT vector length.
-// Returns an error if it isn't.
-func checkN(N int) error {
-	if _, ok := factorsMap[N]; !ok {
-		if !IsPow2(N) {
-			return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
-		}
-		return fmt.Errorf("FFT is not initialized for input dimension: %d, must initialize with Prepare(N) first", N)
-	}
 	return nil
 }
 
@@ -53,7 +43,6 @@ func checkN(N int) error {
 // This is done in-place (modifying the input array).
 // Requires O(1) additional memory.
 // len(x) must be a perfect power of 2, otherwise this will return an error.
-// You must call Prepare(len(x)) before this, otherwise this will return an error.
 func FFT(x []complex128) error {
 	N, factors, perm, err := getVars(x)
 	if err != nil {
@@ -67,7 +56,6 @@ func FFT(x []complex128) error {
 // This is done in-place (modifying the input array).
 // Requires O(1) additional memory.
 // len(x) must be a perfect power of 2, otherwise this will return an error.
-// You must call Prepare(len(x)) before this, otherwise this will return an error.
 func IFFT(x []complex128) error {
 	N, factors, perm, err := getVars(x)
 	if err != nil {
@@ -80,9 +68,9 @@ func IFFT(x []complex128) error {
 // Pre-load the fft variables for later use.
 func getVars(x []complex128) (N int, factors []complex128, perm []int, err error) {
 	N = len(x)
+	err = Prepare(N)
 	factors = factorsMap[N]
 	perm = permMap[N]
-	err = checkN(N)
 	return
 }
 
