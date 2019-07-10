@@ -30,11 +30,11 @@ func FastConvolve(x, y []complex128) error {
 	if len(x) != len(y) {
 		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
 	}
-	N, factors, perm, err := getVars(x)
+	N, perm, err := getVars(x)
 	if err != nil {
 		return err
 	}
-	convolve(x, y, N, factors, perm)
+	convolve(x, y, N, perm)
 	return nil
 }
 
@@ -71,17 +71,17 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 		arrays := arraysByLength[i]
 		if len(arrays) > 0 {
 			// Grab the FFT variables
-			N, factors, perm, err := getVars(arrays[0])
+			N, perm, err := getVars(arrays[0])
 			if err != nil {
 				return nil, err
 			}
 			if len(arraysByLength) == 1 {
-				return multiConvolveSingleLevel(arrays, N, factors, perm, returnLength)
+				return multiConvolveSingleLevel(arrays, N, perm, returnLength)
 			}
 			for j := 0; j < len(arrays); j += 2 {
 				if j+1 < len(arrays) {
 					// For every pair, convolve to a single array
-					convolve(arrays[j], arrays[j+1], N, factors, perm)
+					convolve(arrays[j], arrays[j+1], N, perm)
 				}
 				// Pad out to the next power of 2
 				arraysByLength[2*i] = append(arraysByLength[2*i], ZeroPad(arrays[j], 2*i))
@@ -100,11 +100,11 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	return arraysByLength[mx][0][:returnLength], nil
 }
 
-func multiConvolveSingleLevel(arrays [][]complex128, N int, factors []complex128, perm []int, returnLength int) ([]complex128, error) {
+func multiConvolveSingleLevel(arrays [][]complex128, N int, perm []int, returnLength int) ([]complex128, error) {
 	// If this is the final level, no need for further allocations,
 	// just convolve together and return
 	if len(arrays) == 2 {
-		convolve(arrays[0], arrays[1], N, factors, perm)
+		convolve(arrays[0], arrays[1], N, perm)
 		return arrays[0][:returnLength], nil
 	}
 	if len(arrays) == 1 {
@@ -147,7 +147,7 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 		return fmt.Errorf("X must be array of arrays of a power of 2 length, instead have length %d not a power of 2", N/n)
 	}
 	for ; n != N; n <<= 1 {
-		_, factors, perm, err := getVars(X[:n])
+		_, perm, err := getVars(X[:n])
 		if err != nil {
 			return err
 		}
@@ -158,10 +158,10 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 				wg.Add(1)
 				go func(i int) {
 					defer wg.Done()
-					convolve(X[i:i+n], X[i+n:i+n2], n, factors, perm)
+					convolve(X[i:i+n], X[i+n:i+n2], n, perm)
 				}(i)
 			} else {
-				convolve(X[i:i+n], X[i+n:i+n2], n, factors, perm)
+				convolve(X[i:i+n], X[i+n:i+n2], n, perm)
 			}
 		}
 		wg.Wait()
@@ -170,12 +170,12 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 }
 
 // convolve does the actual work of convolutions.
-func convolve(x, y []complex128, N int, factors []complex128, perm []int) {
-	fft(x, N, factors, perm)
-	fft(y, N, factors, perm)
+func convolve(x, y []complex128, N int, perm []int) {
+	fft(x, N, perm)
+	fft(y, N, perm)
 	for i := 0; i < N; i++ {
 		x[i] *= y[i]
 		y[i] = 0
 	}
-	ifft(x, N, factors, perm)
+	ifft(x, N, perm)
 }
