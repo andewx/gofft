@@ -76,6 +76,8 @@ func getVars(x []complex128) (N int, factors []complex128, perm []int, err error
 
 // fft does the actual work for FFT
 func fft(x []complex128, N int, factors []complex128, perm []int) {
+	//stockham(x, N, factors, perm)
+	//return
 	// Handle small N quickly
 	switch N {
 	case 1:
@@ -102,11 +104,14 @@ func fft(x []complex128, N int, factors []complex128, perm []int) {
 	s := N
 	for n := 1; n < N; n <<= 1 {
 		s >>= 1
+		w := factors[s]
 		for o := 0; o < N; o += (n << 1) {
+			wj := complex(1, 0)
 			for k := 0; k < n; k++ {
 				i := k + o
-				f := factors[k*s] * x[i+n]
+				f := wj * x[i+n]
 				x[i], x[i+n] = x[i]+f, x[i]-f
+				wj *= w
 			}
 		}
 	}
@@ -165,8 +170,8 @@ func permute(x []complex128, perm []int, N int) {
 
 // roots computes the complex-roots-of 1 table of length N.
 func roots(N int) []complex128 {
-	factors := make([]complex128, N/2)
-	for n := 0; n < N/2; n++ {
+	factors := make([]complex128, N/2+1)
+	for n := 0; n <= N/2; n++ {
 		s, c := math.Sincos(-2.0 * math.Pi * float64(n) / float64(N))
 		factors[n] = complex(c, s)
 	}
