@@ -76,8 +76,6 @@ func getVars(x []complex128) (N int, factors []complex128, perm []int, err error
 
 // fft does the actual work for FFT
 func fft(x []complex128, N int, factors []complex128, perm []int) {
-	//stockham(x, N, factors, perm)
-	//return
 	// Handle small N quickly
 	switch N {
 	case 1:
