@@ -158,3 +158,132 @@ func TestFastMultiConvolve(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkConvolve(b *testing.B) {
+	for _, bm := range benchmarks {
+		x := complexRand(bm.size)
+		y := complexRand(bm.size)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 32))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				Convolve(x, y)
+			}
+		})
+	}
+}
+
+func BenchmarkFastConvolve(b *testing.B) {
+	for _, bm := range benchmarks {
+		x := complexRand(bm.size)
+		y := complexRand(bm.size)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 32))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				FastConvolve(x, y)
+			}
+		})
+	}
+}
+
+var (
+	multiConvolveBenchmarks = []struct {
+		size   int
+		number int
+		name   string
+	}{
+		{4, 4, "Tiny (4, 4)"},
+		{4096, 4, "Small (4096, 4)"},
+		{131072, 4, "Medium-Tiny (131072, 4)"},
+		{4096, 128, "Medium-Small (4096, 4096)"},
+		{128, 4096, "Medium-Medium (128, 128)"},
+		{4, 131072, "Medium-Large (4, 131072)"},
+		{100000, 5, "Large-Tiny (100000, 5)"},
+		{4000, 125, "Large-Small (4000, 125)"},
+		{125, 4000, "Large-Medium (125, 4000)"},
+		{5, 100000, "Large-Large (5, 100000)"},
+	}
+)
+
+func BenchmarkMultiConvolve(b *testing.B) {
+	for n := 1; n < 524288; n <<= 1 {
+		err := Prepare(n)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+	}
+	for _, bm := range multiConvolveBenchmarks {
+		x := make([][]complex128, bm.number)
+		for i := 0; i < bm.number; i++ {
+			x[i] = complexRand(bm.size)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * bm.number * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				MultiConvolve(x...)
+			}
+		})
+	}
+}
+
+func BenchmarkFastMultiConvolve(b *testing.B) {
+	for n := 1; n < 524288; n <<= 1 {
+		err := Prepare(n)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+	}
+	for _, bm := range multiConvolveBenchmarks {
+		x := make([]complex128, 2*NextPow2(bm.size)*NextPow2(bm.number))
+		for i := 0; i < len(x); i += 2 * NextPow2(bm.size) {
+			copy(x[i:], complexRand(NextPow2(bm.size)))
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * bm.number * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				FastMultiConvolve(x, NextPow2(bm.size), false)
+			}
+		})
+	}
+}
+
+func BenchmarkFastMultiConvolveParallel(b *testing.B) {
+	for n := 1; n < 524288; n <<= 1 {
+		err := Prepare(n)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+	}
+	for _, bm := range multiConvolveBenchmarks {
+		x := make([]complex128, 2*NextPow2(bm.size)*NextPow2(bm.number))
+		for i := 0; i < len(x); i += 2 * NextPow2(bm.size) {
+			copy(x[i:], complexRand(NextPow2(bm.size)))
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * bm.number * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				err := FastMultiConvolve(x, NextPow2(bm.size), true)
+				if err != nil {
+					b.Error(err)
+				}
+			}
+		})
+	}
+}
