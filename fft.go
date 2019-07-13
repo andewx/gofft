@@ -147,7 +147,7 @@ func fft(x []complex128, N int, perm []int) {
 		return
 	case 4:
 		f := complex(imag(x[1])-imag(x[3]), real(x[3])-real(x[1]))
-		x[0], x[1], x[2], x[3] = x[0]+x[1]+x[2]+x[3], x[0]-x[2]+f, x[0]-x[2], x[0]-x[2]-f
+		x[0], x[1], x[2], x[3] = x[0]+x[1]+x[2]+x[3], x[0]-x[2]+f, x[0]-x[1]+x[2]-x[3], x[0]-x[2]-f
 		return
 	}
 	// Reorder the input array.
