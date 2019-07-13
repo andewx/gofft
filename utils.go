@@ -2,6 +2,7 @@ package gofft
 
 import (
 	"math"
+	"math/bits"
 )
 
 // IsPow2 returns true if N is a perfect power of 2 (1, 2, 4, 8, ...)
@@ -15,18 +16,11 @@ func IsPow2(N int) bool {
 }
 
 // NextPow2 returns the smallest power of 2 >= N. Only works up to 2^30
-// Algorithm from: https://graphics.stanford.edu/~seander/bithacks.html#RoundUpPowerOf2
 func NextPow2(N int) int {
 	if N == 0 {
 		return 1
 	}
-	N -= 1
-	N |= N >> 1
-	N |= N >> 2
-	N |= N >> 4
-	N |= N >> 8
-	N |= N >> 16
-	return N + 1
+	return 1 << uint(bits.Len(uint(N-1)))
 }
 
 // ZeroPad pads x with 0s at the end into a new array of length N.

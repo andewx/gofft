@@ -4,3 +4,5 @@ github.com/mjibson/go-dsp v0.0.0-20180508042940-11479a337f12 h1:dd7vnTDfjtwCETZD
 github.com/mjibson/go-dsp v0.0.0-20180508042940-11479a337f12/go.mod h1:i/KKcxEWEO8Yyl11DYafRPKOPVYTrhxiTRigjtEEXZU=
 scientificgo.org/fft v0.0.0-20181116155530-840c07972bf0 h1:4Adzf5Y4GnJsfGWgnGWyAKJPrTFdHAd1Y53q/3hgl8M=
 scientificgo.org/fft v0.0.0-20181116155530-840c07972bf0/go.mod h1:kjCWUUjwe8nWCDf1noBWJt/zni0qg84jDUBfJhH/ftA=
+scientificgo.org/testutil v0.0.0-20181122181445-a2006c033c77 h1:4GKy6DMtpfrpxw00o7pmLpBnT1u7cvRzGMxIctaal0U=
+scientificgo.org/testutil v0.0.0-20181122181445-a2006c033c77/go.mod h1:Go6R4b+9YkFocMo3H3vNQ7tjbrX9Rc12wal7NZjvPXg=

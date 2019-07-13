@@ -31,6 +31,11 @@ func TestIsPow2(t *testing.T) {
 }
 
 func TestNextPow2(t *testing.T) {
+	// 0. Test n=0 returns 1
+	r := NextPow2(0)
+	if r != 1 {
+		t.Errorf("NextPow2(0), got: %d, expected: 1", r)
+	}
 	for i := 0; i < 30; i++ {
 		// 1. Test all powers of 2 up to 2^29
 		x := 1 << uint32(i)

@@ -205,9 +205,6 @@ func BenchmarkFFT(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				FFT(x)
-				if err != nil {
-					b.Errorf("FFT error: %v", err)
-				}
 			}
 		})
 	}
@@ -231,6 +228,48 @@ func BenchmarkFFTParallel(b *testing.B) {
 				y := x[i*bm.size : (i+1)*bm.size]
 				for pb.Next() {
 					FFT(y)
+				}
+			})
+		})
+	}
+}
+
+func BenchmarkIFFT(b *testing.B) {
+	for _, bm := range benchmarks {
+		x := complexRand(bm.size)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				IFFT(x)
+			}
+		})
+	}
+}
+
+func BenchmarkIFFTParallel(b *testing.B) {
+	for _, bm := range benchmarks {
+		procs := runtime.GOMAXPROCS(0)
+		x := complexRand(bm.size * procs)
+		err := Prepare(bm.size)
+		if err != nil {
+			b.Errorf("Prepare error: %v", err)
+		}
+
+		b.Run(bm.name, func(b *testing.B) {
+			var idx uint64
+			b.SetBytes(int64(bm.size * 16))
+			b.ResetTimer()
+			b.RunParallel(func(pb *testing.PB) {
+				i := int(atomic.AddUint64(&idx, 1) - 1)
+				y := x[i*bm.size : (i+1)*bm.size]
+				for pb.Next() {
+					IFFT(y)
 				}
 			})
 		})
