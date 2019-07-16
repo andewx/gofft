@@ -7,9 +7,9 @@ import (
 )
 
 func TestIsPow2(t *testing.T) {
-	// 1. Test all powers of 2 up to 2^30
-	for i := 0; i < 31; i++ {
-		x := 1 << uint32(i)
+	// 1. Test all powers of 2 up to 2^63
+	for i := 0; i < 64; i++ {
+		x := 1 << uint64(i)
 		r := IsPow2(x)
 		if r != true {
 			t.Errorf("IsPow2(%d), got: %t, expected: %t", x, r, true)
@@ -18,7 +18,7 @@ func TestIsPow2(t *testing.T) {
 
 	// 2. Test all non-powers of 2 up to 2^15
 	n := 1
-	for x := 0; x < (1 << 15); x++ {
+	for x := 0; x < (1 << 16); x++ {
 		if x == n {
 			n <<= 1
 			continue
@@ -36,8 +36,8 @@ func TestNextPow2(t *testing.T) {
 	if r != 1 {
 		t.Errorf("NextPow2(0), got: %d, expected: 1", r)
 	}
-	for i := 0; i < 30; i++ {
-		// 1. Test all powers of 2 up to 2^29
+	for i := 0; i < 63; i++ {
+		// 1. Test all powers of 2 up to 2^62
 		x := 1 << uint32(i)
 		r := NextPow2(x)
 		if r != x {

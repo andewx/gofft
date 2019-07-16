@@ -50,45 +50,47 @@ func copyVector(v []complex128) []complex128 {
 }
 
 func TestFFT(t *testing.T) {
-	N := 1 << 10
-	x := complexRand(N)
-	err := Prepare(N)
-	if err != nil {
-		t.Errorf("Prepare error: %v", err)
-	}
+	for N := 2; N < (1 << 11); N <<= 1 {
+		x := complexRand(N)
+		err := Prepare(N)
+		if err != nil {
+			t.Errorf("Prepare error: %v", err)
+		}
 
-	y1 := slowFFT(copyVector(x))
-	y2 := copyVector(x)
-	err = FFT(y2)
-	if err != nil {
-		t.Errorf("FFT error: %v", err)
-	}
-	for i := 0; i < N; i++ {
-		if e := cmplx.Abs(y1[i] - y2[i]); e > 1E-9 {
-			t.Errorf("slowFFT and FFT differ: i=%d diff=%v\n", i, e)
+		y1 := slowFFT(copyVector(x))
+		y2 := copyVector(x)
+		err = FFT(y2)
+		if err != nil {
+			t.Errorf("FFT error: %v", err)
+		}
+		for i := 0; i < N; i++ {
+			if e := cmplx.Abs(y1[i] - y2[i]); e > 1e-9 {
+				t.Errorf("slowFFT and FFT differ: i=%d N=%d y1[%d]=%v y2[%d]=%v diff=%v\n", i, N, i, y1[i], i, y2[i], e)
+			}
 		}
 	}
 }
 
 func TestIFFT(t *testing.T) {
-	N := 256
-	x := complexRand(N)
-	err := Prepare(N)
-	if err != nil {
-		t.Errorf("Prepare error: %v", err)
-	}
-	y := copyVector(x)
-	err = FFT(y)
-	if err != nil {
-		t.Errorf("FFT error: %v", err)
-	}
-	err = IFFT(y)
-	if err != nil {
-		t.Errorf("IFFT error: %v", err)
-	}
-	for i := range x {
-		if e := cmplx.Abs(x[i] - y[i]); e > 1E-9 {
-			t.Errorf("inverse differs %d: %v %v\n", i, x[i], y[i])
+	for N := 2; N < (1 << 11); N <<= 1 {
+		x := complexRand(N)
+		err := Prepare(N)
+		if err != nil {
+			t.Errorf("Prepare error: %v", err)
+		}
+		y := copyVector(x)
+		err = FFT(y)
+		if err != nil {
+			t.Errorf("FFT error: %v", err)
+		}
+		err = IFFT(y)
+		if err != nil {
+			t.Errorf("IFFT error: %v", err)
+		}
+		for i := range x {
+			if e := cmplx.Abs(x[i] - y[i]); e > 1e-9 {
+				t.Errorf("inverse differs %d: %v %v\n", i, x[i], y[i])
+			}
 		}
 	}
 }

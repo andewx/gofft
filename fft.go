@@ -14,7 +14,7 @@ import (
 
 var (
 	prepareLock sync.RWMutex
-	factors     [64]complex128 = [64]complex128{
+	factors     = [64]complex128{
 		complex(1, 0),
 		complex(-1, 0),
 		complex(0, -1),
