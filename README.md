@@ -68,64 +68,32 @@ Outputs:
 
 ### Benchmarks
 ```
-github.com\argusdusty\gofft>go test -bench=. -benchmem -cpu=1,4
+gofft>go test -bench=FFT$ -benchmem -cpu=1 -benchtime=5s
 goos: windows
 goarch: amd64
 pkg: github.com/argusdusty/gofft
-BenchmarkSlowFFT/Tiny_(4)                       10000000               245 ns/op         261.18 MB/s          64 B/op          1 allocs/op
-BenchmarkSlowFFT/Tiny_(4)-4                     10000000               243 ns/op         263.11 MB/s          64 B/op          1 allocs/op
-BenchmarkSlowFFT/Small_(128)                        5000            320935 ns/op           6.38 MB/s        2048 B/op          1 allocs/op
-BenchmarkSlowFFT/Small_(128)-4                      5000            319540 ns/op           6.41 MB/s        2048 B/op          1 allocs/op
-BenchmarkSlowFFT/Medium_(4096)                         5         313555940 ns/op           0.21 MB/s       65536 B/op          1 allocs/op
-BenchmarkSlowFFT/Medium_(4096)-4                       5         314757120 ns/op           0.21 MB/s       65536 B/op          1 allocs/op
-BenchmarkKtyeFFT/Tiny_(4)                       20000000               119 ns/op         534.54 MB/s          64 B/op          1 allocs/op
-BenchmarkKtyeFFT/Tiny_(4)-4                     20000000               105 ns/op         608.55 MB/s          64 B/op          1 allocs/op
-BenchmarkKtyeFFT/Small_(128)                      500000              3743 ns/op         547.02 MB/s        2048 B/op          1 allocs/op
-BenchmarkKtyeFFT/Small_(128)-4                    500000              3881 ns/op         527.62 MB/s        2048 B/op          1 allocs/op
-BenchmarkKtyeFFT/Medium_(4096)                     10000            175428 ns/op         373.58 MB/s       65536 B/op          1 allocs/op
-BenchmarkKtyeFFT/Medium_(4096)-4                   10000            165554 ns/op         395.86 MB/s       65536 B/op          1 allocs/op
-BenchmarkKtyeFFT/Large_(131072)                      200           8886224 ns/op         236.00 MB/s     2097152 B/op          1 allocs/op
-BenchmarkKtyeFFT/Large_(131072)-4                    200           9300254 ns/op         225.49 MB/s     2097154 B/op          1 allocs/op
-BenchmarkGoDSPFFT/Tiny_(4)                        500000              3219 ns/op          19.88 MB/s         545 B/op         13 allocs/op
-BenchmarkGoDSPFFT/Tiny_(4)-4                      500000              3791 ns/op          16.88 MB/s         504 B/op         14 allocs/op
-BenchmarkGoDSPFFT/Small_(128)                     200000             12431 ns/op         164.74 MB/s        5598 B/op         18 allocs/op
-BenchmarkGoDSPFFT/Small_(128)-4                   100000             22410 ns/op          91.39 MB/s        5785 B/op         34 allocs/op
-BenchmarkGoDSPFFT/Medium_(4096)                    10000            182113 ns/op         359.86 MB/s      164383 B/op         23 allocs/op
-BenchmarkGoDSPFFT/Medium_(4096)-4                  10000            208641 ns/op         314.11 MB/s      164830 B/op         54 allocs/op
-BenchmarkGoDSPFFT/Large_(131072)                     200           8108197 ns/op         258.65 MB/s     5243448 B/op         28 allocs/op
-BenchmarkGoDSPFFT/Large_(131072)-4                   300           6190119 ns/op         338.79 MB/s     5244211 B/op         74 allocs/op
-BenchmarkGoDSPFFT/Huge_(4194304)                       2         893609500 ns/op          75.10 MB/s    167772840 B/op        33 allocs/op
-BenchmarkGoDSPFFT/Huge_(4194304)-4                     3         399930300 ns/op         167.80 MB/s    167774058 B/op        97 allocs/op
-BenchmarkScientificFFT/Tiny_(4)                 10000000               120 ns/op         532.54 MB/s         128 B/op          2 allocs/op
-BenchmarkScientificFFT/Tiny_(4)-4               20000000               115 ns/op         555.60 MB/s         128 B/op          2 allocs/op
-BenchmarkScientificFFT/Small_(128)               1000000              2278 ns/op         898.68 MB/s        4096 B/op          2 allocs/op
-BenchmarkScientificFFT/Small_(128)-4             1000000              2172 ns/op         942.84 MB/s        4096 B/op          2 allocs/op
-BenchmarkScientificFFT/Medium_(4096)               20000             88960 ns/op         736.69 MB/s      131072 B/op          2 allocs/op
-BenchmarkScientificFFT/Medium_(4096)-4             20000             84723 ns/op         773.53 MB/s      131072 B/op          2 allocs/op
-BenchmarkScientificFFT/Large_(131072)                300           4451421 ns/op         471.12 MB/s     4194304 B/op          2 allocs/op
-BenchmarkScientificFFT/Large_(131072)-4              300           4597706 ns/op         456.13 MB/s     4194304 B/op          2 allocs/op
-BenchmarkScientificFFT/Huge_(4194304)                  5         232384120 ns/op         288.78 MB/s    134217728 B/op         2 allocs/op
-BenchmarkScientificFFT/Huge_(4194304)-4                5         223402620 ns/op         300.39 MB/s    134217728 B/op         2 allocs/op
-BenchmarkFFT/Tiny_(4)                           30000000              44.9 ns/op        1424.97 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Tiny_(4)-4                         30000000              45.6 ns/op        1404.16 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Small_(128)                         1000000              1493 ns/op        1371.70 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Small_(128)-4                       1000000              1495 ns/op        1368.99 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Medium_(4096)                         20000             83526 ns/op         784.61 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Medium_(4096)-4                       20000             84523 ns/op         775.36 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Large_(131072)                          300           3972706 ns/op         527.89 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Large_(131072)-4                        500           4328479 ns/op         484.50 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Huge_(4194304)                            5         230782600 ns/op         290.79 MB/s           0 B/op          0 allocs/op
-BenchmarkFFT/Huge_(4194304)-4                          5         230987220 ns/op         290.53 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Tiny_(4)                   30000000              44.8 ns/op        1429.20 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Tiny_(4)-4                 50000000              36.9 ns/op        1736.23 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Small_(128)                 1000000              1497 ns/op        1367.16 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Small_(128)-4               3000000               522 ns/op        3921.35 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Medium_(4096)                 20000             83676 ns/op         783.21 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Medium_(4096)-4               50000             26788 ns/op        2446.44 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Large_(131072)                  500           3967385 ns/op         528.60 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Large_(131072)-4               1000           1439149 ns/op        1457.22 MB/s           0 B/op          0 allocs/op
-BenchmarkFFTParallel/Huge_(4194304)                    5         216819940 ns/op         309.51 MB/s          35 B/op          1 allocs/op
-BenchmarkFFTParallel/Huge_(4194304)-4                 10         159174100 ns/op         421.61 MB/s          20 B/op          0 allocs/op
+BenchmarkSlowFFT/Tiny_(4)                       26778385               211 ns/op         302.94 MB/s          64 B/op          1 allocs/op
+BenchmarkSlowFFT/Small_(128)                       19299            307909 ns/op           6.65 MB/s        2048 B/op          1 allocs/op
+BenchmarkSlowFFT/Medium_(4096)                        20         289214125 ns/op           0.23 MB/s       65536 B/op          1 allocs/op
+BenchmarkKtyeFFT/Tiny_(4)                       93711196              62.2 ns/op        1028.68 MB/s          64 B/op          1 allocs/op
+BenchmarkKtyeFFT/Small_(128)                     2772037              2065 ns/op         991.94 MB/s        2048 B/op          1 allocs/op
+BenchmarkKtyeFFT/Medium_(4096)                     60714             99719 ns/op         657.20 MB/s       65536 B/op          1 allocs/op
+BenchmarkKtyeFFT/Large_(131072)                      615           9582652 ns/op         218.85 MB/s     2097152 B/op          1 allocs/op
+BenchmarkGoDSPFFT/Tiny_(4)                       1875174              3379 ns/op          18.94 MB/s         519 B/op         13 allocs/op
+BenchmarkGoDSPFFT/Small_(128)                     495807             12516 ns/op         163.63 MB/s        5591 B/op         18 allocs/op
+BenchmarkGoDSPFFT/Medium_(4096)                    36092            162981 ns/op         402.11 MB/s      164364 B/op         23 allocs/op
+BenchmarkGoDSPFFT/Large_(131072)                     802           7506683 ns/op         279.37 MB/s     5243448 B/op         28 allocs/op
+BenchmarkGoDSPFFT/Huge_(4194304)                       6         906703233 ns/op          74.01 MB/s   167772810 B/op         33 allocs/op
+BenchmarkScientificFFT/Tiny_(4)                 54239148               111 ns/op         576.40 MB/s         128 B/op          2 allocs/op
+BenchmarkScientificFFT/Small_(128)               3121048              1938 ns/op        1056.98 MB/s        4096 B/op          2 allocs/op
+BenchmarkScientificFFT/Medium_(4096)               77004             74428 ns/op         880.52 MB/s      131072 B/op          2 allocs/op
+BenchmarkScientificFFT/Large_(131072)               1816           3206107 ns/op         654.11 MB/s     4194304 B/op          2 allocs/op
+BenchmarkScientificFFT/Huge_(4194304)                 24         247888846 ns/op         270.72 MB/s   134217728 B/op          2 allocs/op
+BenchmarkFFT/Tiny_(4)                          794523928              7.73 ns/op        8279.81 MB/s           0 B/op          0 allocs/op
+BenchmarkFFT/Small_(128)                         5375140              1132 ns/op        1809.57 MB/s           0 B/op          0 allocs/op
+BenchmarkFFT/Medium_(4096)                         97856             56821 ns/op        1153.38 MB/s           0 B/op          0 allocs/op
+BenchmarkFFT/Large_(131072)                         2142           2850784 ns/op         735.64 MB/s           0 B/op          0 allocs/op
+BenchmarkFFT/Huge_(4194304)                           26         223165362 ns/op         300.71 MB/s           0 B/op          0 allocs/op
 ```
 
 [travis-ci-badge]:   https://api.travis-ci.org/argusdusty/gofft.svg?branch=master
