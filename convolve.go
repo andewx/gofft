@@ -64,7 +64,7 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	}
 	// For each successive power of 2, convolve the entries in pairs up to the
 	// next power of 2
-	for i := 1; i <= mx; i *= 2 {
+	for i := 1; ; i <<= 1 {
 		arrays := arraysByLength[i]
 		if len(arrays) > 0 {
 			if len(arraysByLength) == 1 {
@@ -77,19 +77,12 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 				}
 				// Pad out to the next power of 2
 				arraysByLength[2*i] = append(arraysByLength[2*i], ZeroPad(arrays[j], 2*i))
-				if 2*i > mx {
-					// Increase the max length as necessary
-					// Shouldn't be possible to reach this, thanks to multiConvolveSingleLevel.
-					mx = 2 * i
-				}
 			}
 		}
 		// Trigger the garbage collector
 		arraysByLength[i] = nil
 		delete(arraysByLength, i)
 	}
-	// Shouldn't be possible to reach this, but compiler needs it just in case.
-	return arraysByLength[mx][0][:returnLength], nil
 }
 
 func multiConvolveSingleLevel(arrays [][]complex128, returnLength int) ([]complex128, error) {
@@ -146,14 +139,12 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 			NumCPU := runtime.NumCPU()
 			for j := 0; j < NumCPU; j++ {
 				wg.Add(1)
-				go func(j int) {
+				go func(s, e int) {
 					defer wg.Done()
-					s := (j * (N / n2)) / NumCPU
-					e := ((j + 1) * (N / n2)) / NumCPU
-					for i := s; i < e; i++ {
-						convolve(X[i*n2:i*n2+n], X[i*n2+n:i*n2+n2])
+					for i := s; i < e; i += n2 {
+						convolve(X[i:i+n], X[i+n:i+n2])
 					}
-				}(j)
+				}(n2*((j*N/n2)/NumCPU), n2*(((j+1)*N/n2)/NumCPU))
 			}
 			wg.Wait()
 		} else {
