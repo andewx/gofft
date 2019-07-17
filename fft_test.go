@@ -4,6 +4,7 @@ import (
 	ktyefft "github.com/ktye/fft"
 	dspfft "github.com/mjibson/go-dsp/fft"
 	"math"
+	"math/bits"
 	"math/cmplx"
 	"math/rand"
 	"reflect"
@@ -109,6 +110,24 @@ func TestPermutationIndex(t *testing.T) {
 		if !reflect.DeepEqual(got, expect) {
 			t.Errorf("%d expected: %v, got: %v\n", i, expect, got)
 		}
+	}
+}
+
+func TestPermute(t *testing.T) {
+	shift := uint64(64)
+	for n := 1; n < (1 << 11); n <<= 1 {
+		x := complexRand(n)
+		y := make([]complex128, n)
+		copy(y, x)
+		N, perm, _ := getVars(x)
+		permute(x, perm, N)
+		for i := 0; i < n; i++ {
+			ind := int(bits.Reverse64(uint64(i)) >> shift)
+			if x[i] != y[ind] {
+				t.Errorf("%d expected: x[%d] = %v, got: %v\n", n, i, y[ind], x[i])
+			}
+		}
+		shift--
 	}
 }
 

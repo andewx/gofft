@@ -9,6 +9,7 @@ package gofft
 
 import (
 	"fmt"
+	"math/bits"
 	"sync"
 )
 
@@ -201,19 +202,14 @@ func ifft(x []complex128, N int, perm []int) {
 // which is needed to permutate the input data.
 func permutationIndex(N int) []int {
 	index := make([]int, N)
-	// For every next power of two, the sequence is multiplied by 2 in-place.
-	// Then the result is also appended to the end and increased by one.
+	shift := uint64(64)
 	for n := 1; n < N; n <<= 1 {
-		for i := 0; i < n; i++ {
-			index[i] <<= 1
-			index[i+n] = index[i] + 1
-		}
+		shift--
 	}
-	// Re-arrange the permutation to just the necessary swaps
-	for i := 1; i < N-1; i++ {
-		ind := index[i]
-		for ind < i {
-			ind = index[ind]
+	for i := 0; i < N; i++ {
+		ind := int(bits.Reverse64(uint64(i)) >> shift)
+		if ind < i {
+			ind = i
 		}
 		index[i] = ind
 	}
