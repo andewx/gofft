@@ -14,7 +14,8 @@ import (
 )
 
 // Prepare precomputes values used for FFT on a vector of length N.
-// N must be a perfect power of 2, otherwise this will return an error
+// N must be a perfect power of 2, otherwise this will return an error.
+//
 // Deprecated: This no longer has any functionality
 func Prepare(N int) error {
 	return checkLength(N)
