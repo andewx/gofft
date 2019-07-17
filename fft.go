@@ -131,6 +131,10 @@ func IFFT(x []complex128) error {
 // Pre-load the fft variables for later use.
 func getVars(x []complex128) (N int, perm []int, err error) {
 	N = len(x)
+	switch N {
+	case 1, 2, 4, 8:
+		return
+	}
 	err = Prepare(N)
 	perm = permMap[N]
 	return
@@ -152,9 +156,15 @@ func fft(x []complex128, N int, perm []int) {
 	}
 	// Reorder the input array.
 	permute(x, perm, N)
-	s := 0
 	// Butterfly
-	for n := 1; n < N; n <<= 1 {
+	// First 2 steps
+	for i := 0; i < N; i += 4 {
+		f := complex(imag(x[i+2])-imag(x[i+3]), real(x[i+3])-real(x[i+2]))
+		x[i], x[i+1], x[i+2], x[i+3] = x[i]+x[i+1]+x[i+2]+x[i+3], x[i]-x[i+1]+f, x[i]-x[i+2]+x[i+1]-x[i+3], x[i]-x[i+1]-f
+	}
+	// Remaining steps
+	s := 2
+	for n := 4; n < N; n <<= 1 {
 		s++
 		w := factors[s]
 		for o := 0; o < N; o += (n << 1) {
@@ -191,7 +201,6 @@ func ifft(x []complex128, N int, perm []int) {
 // which is needed to permutate the input data.
 func permutationIndex(N int) []int {
 	index := make([]int, N)
-	index[0] = 0 // Initial sequence for N=1
 	// For every next power of two, the sequence is multiplied by 2 in-place.
 	// Then the result is also appended to the end and increased by one.
 	for n := 1; n < N; n <<= 1 {
@@ -214,6 +223,16 @@ func permutationIndex(N int) []int {
 // permutate permutes the input vector according to the permutation vector.
 // Uses an in-place algorithm that on FFT permutation vectors runs in O(N) time.
 func permute(x []complex128, perm []int, N int) {
+	switch N {
+	case 1, 2:
+		return
+	case 4:
+		x[1], x[2] = x[2], x[1]
+		return
+	case 8:
+		x[1], x[3], x[4], x[6] = x[4], x[6], x[1], x[3]
+		return
+	}
 	// perm[0] is always 0, and perm[N-1] is always N-1, so skip those
 	for i := 1; i < N-1; i++ {
 		x[i], x[perm[i]] = x[perm[i]], x[i]
