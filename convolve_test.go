@@ -45,16 +45,12 @@ func TestConvolve(t *testing.T) {
 func TestFastConvolve(t *testing.T) {
 	for i := 1; i < 500; i++ {
 		N := NextPow2(2 * i)
-		err := Prepare(N)
-		if err != nil {
-			t.Error(err)
-		}
 		x := complexRand(i)
 		x = ZeroPad(x, N)
 		y := complexRand(i)
 		y = ZeroPad(y, N)
 		r1 := slowConvolve(x, y)
-		err = FastConvolve(x, y)
+		err := FastConvolve(x, y)
 		if err != nil {
 			t.Error(err)
 		}
@@ -163,10 +159,6 @@ func BenchmarkConvolve(b *testing.B) {
 	for _, bm := range benchmarks {
 		x := complexRand(bm.size)
 		y := complexRand(bm.size)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 32))
@@ -182,10 +174,6 @@ func BenchmarkFastConvolve(b *testing.B) {
 	for _, bm := range benchmarks {
 		x := complexRand(bm.size)
 		y := complexRand(bm.size)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 32))
@@ -217,12 +205,6 @@ var (
 )
 
 func BenchmarkMultiConvolve(b *testing.B) {
-	for n := 1; n < 524288; n <<= 1 {
-		err := Prepare(n)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
-	}
 	for _, bm := range multiConvolveBenchmarks {
 		x := make([][]complex128, bm.number)
 		for i := 0; i < bm.number; i++ {
@@ -240,12 +222,6 @@ func BenchmarkMultiConvolve(b *testing.B) {
 }
 
 func BenchmarkFastMultiConvolve(b *testing.B) {
-	for n := 1; n < 524288; n <<= 1 {
-		err := Prepare(n)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
-	}
 	for _, bm := range multiConvolveBenchmarks {
 		x := make([]complex128, 2*NextPow2(bm.size)*NextPow2(bm.number))
 		for i := 0; i < len(x); i += 2 * NextPow2(bm.size) {
@@ -263,12 +239,6 @@ func BenchmarkFastMultiConvolve(b *testing.B) {
 }
 
 func BenchmarkFastMultiConvolveParallel(b *testing.B) {
-	for n := 1; n < 524288; n <<= 1 {
-		err := Prepare(n)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
-	}
 	for _, bm := range multiConvolveBenchmarks {
 		x := make([]complex128, 2*NextPow2(bm.size)*NextPow2(bm.number))
 		for i := 0; i < len(x); i += 2 * NextPow2(bm.size) {

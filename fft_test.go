@@ -7,7 +7,6 @@ import (
 	"math/bits"
 	"math/cmplx"
 	"math/rand"
-	"reflect"
 	"runtime"
 	scientificfft "scientificgo.org/fft"
 	"sync/atomic"
@@ -53,14 +52,10 @@ func copyVector(v []complex128) []complex128 {
 func TestFFT(t *testing.T) {
 	for N := 2; N < (1 << 11); N <<= 1 {
 		x := complexRand(N)
-		err := Prepare(N)
-		if err != nil {
-			t.Errorf("Prepare error: %v", err)
-		}
 
 		y1 := slowFFT(copyVector(x))
 		y2 := copyVector(x)
-		err = FFT(y2)
+		err := FFT(y2)
 		if err != nil {
 			t.Errorf("FFT error: %v", err)
 		}
@@ -75,12 +70,8 @@ func TestFFT(t *testing.T) {
 func TestIFFT(t *testing.T) {
 	for N := 2; N < (1 << 11); N <<= 1 {
 		x := complexRand(N)
-		err := Prepare(N)
-		if err != nil {
-			t.Errorf("Prepare error: %v", err)
-		}
 		y := copyVector(x)
-		err = FFT(y)
+		err := FFT(y)
 		if err != nil {
 			t.Errorf("FFT error: %v", err)
 		}
@@ -96,31 +87,13 @@ func TestIFFT(t *testing.T) {
 	}
 }
 
-func TestPermutationIndex(t *testing.T) {
-	tab := [][]int{
-		{0},
-		{0, 1},
-		{0, 2, 2, 3},
-		{0, 4, 2, 6, 4, 5, 6, 7},
-		{0, 8, 4, 12, 4, 10, 6, 14, 8, 9, 10, 13, 12, 13, 14, 15},
-	}
-	for i := 0; i < len(tab); i++ {
-		got := permutationIndex(1 << uint32(i))
-		expect := tab[i]
-		if !reflect.DeepEqual(got, expect) {
-			t.Errorf("%d expected: %v, got: %v\n", i, expect, got)
-		}
-	}
-}
-
 func TestPermute(t *testing.T) {
 	shift := uint64(64)
 	for n := 1; n < (1 << 11); n <<= 1 {
 		x := complexRand(n)
 		y := make([]complex128, n)
 		copy(y, x)
-		N, perm, _ := getVars(x)
-		permute(x, perm, N)
+		permute(x)
 		for i := 0; i < n; i++ {
 			ind := int(bits.Reverse64(uint64(i)) >> shift)
 			if x[i] != y[ind] {
@@ -216,10 +189,6 @@ func BenchmarkScientificFFT(b *testing.B) {
 func BenchmarkFFT(b *testing.B) {
 	for _, bm := range benchmarks {
 		x := complexRand(bm.size)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
@@ -235,10 +204,6 @@ func BenchmarkFFTParallel(b *testing.B) {
 	for _, bm := range benchmarks {
 		procs := runtime.GOMAXPROCS(0)
 		x := complexRand(bm.size * procs)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			var idx uint64
@@ -258,10 +223,6 @@ func BenchmarkFFTParallel(b *testing.B) {
 func BenchmarkIFFT(b *testing.B) {
 	for _, bm := range benchmarks {
 		x := complexRand(bm.size)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			b.SetBytes(int64(bm.size * 16))
@@ -277,10 +238,6 @@ func BenchmarkIFFTParallel(b *testing.B) {
 	for _, bm := range benchmarks {
 		procs := runtime.GOMAXPROCS(0)
 		x := complexRand(bm.size * procs)
-		err := Prepare(bm.size)
-		if err != nil {
-			b.Errorf("Prepare error: %v", err)
-		}
 
 		b.Run(bm.name, func(b *testing.B) {
 			var idx uint64

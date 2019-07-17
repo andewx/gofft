@@ -31,11 +31,7 @@ func FastConvolve(x, y []complex128) error {
 	if len(x) != len(y) {
 		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
 	}
-	N, perm, err := getVars(x)
-	if err != nil {
-		return err
-	}
-	convolve(x, y, N, perm)
+	convolve(x, y)
 	return nil
 }
 
@@ -71,18 +67,13 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	for i := 1; i <= mx; i *= 2 {
 		arrays := arraysByLength[i]
 		if len(arrays) > 0 {
-			// Grab the FFT variables
-			N, perm, err := getVars(arrays[0])
-			if err != nil {
-				return nil, err
-			}
 			if len(arraysByLength) == 1 {
-				return multiConvolveSingleLevel(arrays, N, perm, returnLength)
+				return multiConvolveSingleLevel(arrays, returnLength)
 			}
 			for j := 0; j < len(arrays); j += 2 {
 				if j+1 < len(arrays) {
 					// For every pair, convolve to a single array
-					convolve(arrays[j], arrays[j+1], N, perm)
+					convolve(arrays[j], arrays[j+1])
 				}
 				// Pad out to the next power of 2
 				arraysByLength[2*i] = append(arraysByLength[2*i], ZeroPad(arrays[j], 2*i))
@@ -101,11 +92,11 @@ func MultiConvolve(X ...[]complex128) ([]complex128, error) {
 	return arraysByLength[mx][0][:returnLength], nil
 }
 
-func multiConvolveSingleLevel(arrays [][]complex128, N int, perm []int, returnLength int) ([]complex128, error) {
+func multiConvolveSingleLevel(arrays [][]complex128, returnLength int) ([]complex128, error) {
 	// If this is the final level, no need for further allocations,
 	// just convolve together and return
 	if len(arrays) == 2 {
-		convolve(arrays[0], arrays[1], N, perm)
+		convolve(arrays[0], arrays[1])
 		return arrays[0][:returnLength], nil
 	}
 	if len(arrays) == 1 {
@@ -113,6 +104,7 @@ func multiConvolveSingleLevel(arrays [][]complex128, N int, perm []int, returnLe
 	}
 	// If everything has ended up on the same length,
 	// just use FastMultiConvolve and return
+	N := len(arrays[0])
 	n2 := NextPow2(len(arrays))
 	data := make([]complex128, n2*N)
 	for j, array := range arrays {
@@ -148,10 +140,6 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 		return fmt.Errorf("X must be array of arrays of a power of 2 length, instead have length %d not a power of 2", N/n)
 	}
 	for ; n != N; n <<= 1 {
-		_, perm, err := getVars(X[:n])
-		if err != nil {
-			return err
-		}
 		n2 := n << 1
 		if multithread {
 			var wg sync.WaitGroup
@@ -163,14 +151,14 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 					s := (j * (N / n2)) / NumCPU
 					e := ((j + 1) * (N / n2)) / NumCPU
 					for i := s; i < e; i++ {
-						convolve(X[i*n2:i*n2+n], X[i*n2+n:i*n2+n2], n, perm)
+						convolve(X[i*n2:i*n2+n], X[i*n2+n:i*n2+n2])
 					}
 				}(j)
 			}
 			wg.Wait()
 		} else {
 			for i := 0; i < N; i += n2 {
-				convolve(X[i:i+n], X[i+n:i+n2], n, perm)
+				convolve(X[i:i+n], X[i+n:i+n2])
 			}
 		}
 	}
@@ -178,12 +166,12 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 }
 
 // convolve does the actual work of convolutions.
-func convolve(x, y []complex128, N int, perm []int) {
-	fft(x, N, perm)
-	fft(y, N, perm)
-	for i := 0; i < N; i++ {
+func convolve(x, y []complex128) {
+	fft(x)
+	fft(y)
+	for i := 0; i < len(x); i++ {
 		x[i] *= y[i]
 		y[i] = 0
 	}
-	ifft(x, N, perm)
+	ifft(x)
 }
