@@ -59,25 +59,58 @@ func TestNextPow2(t *testing.T) {
 	}
 }
 
+func checkZeroPadding(t *testing.T, x1, x2 []complex128, N1, N2 int) {
+	if len(x1) != N1 {
+		t.Errorf("ZeroPad old array length, got: %d, expected: %d", len(x1), N1)
+	}
+	if len(x2) != N2 {
+		t.Errorf("ZeroPad new array length, got: %d, expected: %d", len(x2), N2)
+	}
+	for j := 0; j < N1; j++ {
+		if x1[j] != x2[j] {
+			t.Errorf("ZeroPad copied section, got: x2[j] = %v, expected: x2[j] = %v", x2[j], x1[j])
+		}
+	}
+	for j := N1; j < N2; j++ {
+		if x2[j] != 0 {
+			t.Errorf("ZeroPad padded section, got: x2[j] = %v, expected: x2[j] = %v", x2[j], 0)
+		}
+	}
+}
+
 func TestZeroPad(t *testing.T) {
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 100; i++ {
 		// Test random lengths between 0 and 10000, and random paddings between 0 and 1000
 		N1 := rand.Intn(10000)
 		N2 := N1 + rand.Intn(1000)
 		x1 := complexRand(N1)
 		x2 := ZeroPad(x1, N2)
-		if len(x1) != N1 {
-			t.Errorf("ZeroPad old array length, got: %d, expected: %d", len(x1), N1)
-		}
-		for j := 0; j < N1; j++ {
-			if x1[j] != x2[j] {
-				t.Errorf("ZeroPad copied section, got: x2[j] = %v, expected: x2[j] = %v", x2[j], x1[j])
-			}
-		}
-		for j := N1; j < N2; j++ {
-			if x2[j] != 0 {
-				t.Errorf("ZeroPad padded section, got: x2[j] = %v, expected: x2[j] = %v", x2[j], 0)
-			}
+		checkZeroPadding(t, x1, x2, N1, N2)
+	}
+}
+
+func TestZeroPadToNextPow2(t *testing.T) {
+	// 0. Test n=0 returns [0]
+	r := ZeroPadToNextPow2(nil)
+	if len(r) != 1 {
+		t.Errorf("len(ZeroPadToNextPow2(nil)), got: %d, expected: 1", len(r))
+	}
+	for i := 0; i < 17; i++ {
+		// 1. Test powers of 2 up to 2^16
+		N1 := 1 << uint32(i)
+		x1 := complexRand(N1)
+		x2 := ZeroPadToNextPow2(x1)
+		checkZeroPadding(t, x1, x2, N1, N1)
+		// 2. Test powers of 2 plus one
+		x1 = complexRand(N1 + 1)
+		x2 = ZeroPadToNextPow2(x1)
+		checkZeroPadding(t, x1, x2, N1+1, 2*N1)
+		// 3. Test random number between here and next power of 2
+		if N1 > 1 {
+			n := rand.Intn(N1-1) + 1
+			x1 = complexRand(N1 + n)
+			x2 = ZeroPadToNextPow2(x1)
+			checkZeroPadding(t, x1, x2, N1+n, 2*N1)
 		}
 	}
 }

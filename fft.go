@@ -8,7 +8,6 @@
 package gofft
 
 import (
-	"fmt"
 	"math/bits"
 	"math/cmplx"
 )
@@ -18,15 +17,7 @@ import (
 //
 // Deprecated: This no longer has any functionality
 func Prepare(N int) error {
-	return checkLength(N)
-}
-
-// checkLength checks that the length of x is a valid power of 2
-func checkLength(N int) error {
-	if !IsPow2(N) {
-		return fmt.Errorf("Input dimension must be power of 2, is: %d", N)
-	}
-	return nil
+	return checkLength("FFT Input", N)
 }
 
 // FFT implements the fast Fourier transform.
@@ -34,7 +25,7 @@ func checkLength(N int) error {
 // Requires O(1) additional memory.
 // len(x) must be a perfect power of 2, otherwise this will return an error.
 func FFT(x []complex128) error {
-	if err := checkLength(len(x)); err != nil {
+	if err := checkLength("FFT Input", len(x)); err != nil {
 		return err
 	}
 	fft(x)
@@ -46,7 +37,7 @@ func FFT(x []complex128) error {
 // Requires O(1) additional memory.
 // len(x) must be a perfect power of 2, otherwise this will return an error.
 func IFFT(x []complex128) error {
-	if err := checkLength(len(x)); err != nil {
+	if err := checkLength("IFFT Input", len(x)); err != nil {
 		return err
 	}
 	ifft(x)

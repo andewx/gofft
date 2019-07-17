@@ -1,7 +1,6 @@
 package gofft
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 )
@@ -28,8 +27,11 @@ func FastConvolve(x, y []complex128) error {
 	if len(x) == 0 && len(y) == 0 {
 		return nil
 	}
-	if len(x) != len(y) {
-		return fmt.Errorf("x and y must have the same length, given: %d, %d", len(x), len(y))
+	if err := checkZero("difference in FastConvolve input vectors length", len(x)-len(y)); err != nil {
+		return err
+	}
+	if err := checkLength("FastConvolve input vector length", len(x)); err != nil {
+		return err
 	}
 	convolve(x, y)
 	return nil
@@ -46,6 +48,9 @@ func FastConvolve(x, y []complex128) error {
 // very well. If all your arrays are the same length, FastMultiConvolve
 // will be much faster.
 func MultiConvolve(X ...[]complex128) ([]complex128, error) {
+	if len(X) == 0 {
+		return nil, nil
+	}
 	arraysByLength := map[int][][]complex128{}
 	mx := 1
 	returnLength := 1
@@ -122,15 +127,15 @@ func multiConvolveSingleLevel(arrays [][]complex128, returnLength int) ([]comple
 // which can slow things down for small N.
 // Takes O(N*log(N)^2) run time and O(1) additional space.
 func FastMultiConvolve(X []complex128, n int, multithread bool) error {
+	if err := checkLength("Convolve single input array", n); err != nil {
+		return err
+	}
 	N := len(X)
-	if N%n != 0 {
-		return fmt.Errorf("X must be array of arrays each of length n, instead have len(X) %d not divisible by n (%d)", N, n)
+	if err := checkZero("FastMultiConvolve remainder", N%n); err != nil {
+		return err
 	}
-	if !IsPow2(n) {
-		return fmt.Errorf("X must be array of arrays each of a power of 2 length, instead have length %d not a power of 2", n)
-	}
-	if !IsPow2(N / n) {
-		return fmt.Errorf("X must be array of arrays of a power of 2 length, instead have length %d not a power of 2", N/n)
+	if err := checkLength("FastMultiConvolve number of input arrays", N/n); err != nil {
+		return err
 	}
 	for ; n != N; n <<= 1 {
 		n2 := n << 1

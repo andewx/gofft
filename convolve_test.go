@@ -21,9 +21,9 @@ func slowConvolve(x, y []complex128) []complex128 {
 }
 
 func TestConvolve(t *testing.T) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 64; i++ {
 		x := complexRand(i)
-		for j := 0; j < 100; j++ {
+		for j := 0; j < 64; j++ {
 			y := complexRand(j)
 			r1 := slowConvolve(x, y)
 			r2, err := Convolve(x, y)
@@ -43,7 +43,41 @@ func TestConvolve(t *testing.T) {
 }
 
 func TestFastConvolve(t *testing.T) {
-	for i := 1; i < 500; i++ {
+	// Test FastConvolve of zero inputs returns nil
+	x := complexRand(0)
+	y := complexRand(0)
+	err := FastConvolve(x, y)
+	if err != nil {
+		t.Errorf("FastConvolve on empty inputs returned error: %v", err)
+	}
+	// Test FastConvolve of non-powers of 2 returns InputSizeError
+	for N := 3; N < 101; N += 2 {
+		x := complexRand(5)
+		y := complexRand(5)
+		err := FastConvolve(x, y)
+		if err == nil {
+			t.Errorf("FastConvolve on non-power of 2 input size %d didn't return error", N)
+		}
+		switch e := err.(type) {
+		case *InputSizeError:
+		default:
+			t.Errorf("FastConvolve on non-power of 2 input size %d returned incorrect error type: %v", N, e)
+		}
+	}
+	// Test FastConvolve of different vector sizes returns InputSizeError
+	x = complexRand(4)
+	y = complexRand(8)
+	err = FastConvolve(x, y)
+	if err == nil {
+		t.Errorf("FastConvolve on differing input sizes didn't return error")
+	}
+	switch e := err.(type) {
+	case *InputSizeError:
+	default:
+		t.Errorf("FastConvolve on differing input sizes returned incorrect error type: %v", e)
+	}
+	// Test FastConvolve(x, y) == slowConvolve(x, y)
+	for i := 1; i < 128; i++ {
 		N := NextPow2(2 * i)
 		x := complexRand(i)
 		x = ZeroPad(x, N)
@@ -81,6 +115,23 @@ func slowMultiConvolve(X [][]complex128) []complex128 {
 }
 
 func TestMultiConvolve(t *testing.T) {
+	// Test MultiConvolve() == nil
+	x, err := MultiConvolve()
+	if err != nil {
+		t.Errorf("MultiConvolve() returned error: %v", err)
+	}
+	if len(x) != 0 {
+		t.Errorf("MultiConvolve() returned non-empty result: %v", x)
+	}
+	// Test MultiConvolve(nil) == nil
+	x, err = MultiConvolve(nil)
+	if err != nil {
+		t.Errorf("MultiConvolve(nil) returned error: %v", err)
+	}
+	if len(x) != 0 {
+		t.Errorf("MultiConvolve(nil) returned non-empty result: %v", x)
+	}
+	// Test MultiConvolve(X...) == slowMultiConvolve(X)
 	for i := 1; i < 25; i++ {
 		X := make([][]complex128, i)
 		for j := 1; j < 25; j++ {
@@ -108,6 +159,16 @@ func TestMultiConvolve(t *testing.T) {
 }
 
 func TestFastMultiConvolve(t *testing.T) {
+	// Test non-power of 2 number of arrays
+	err := FastMultiConvolve(make([]complex128, 5), 4, false)
+	checkIsInputSizeError(t, "FastMultiConvolve(make([]complex128, 5), 4, false)", err)
+	err = FastMultiConvolve(make([]complex128, 4), 3, false)
+	checkIsInputSizeError(t, "FastMultiConvolve(make([]complex128, 4), 3, false)", err)
+	err = FastMultiConvolve(make([]complex128, 4), 8, false)
+	checkIsInputSizeError(t, "FastMultiConvolve(make([]complex128, 4), 8, false)", err)
+	err = FastMultiConvolve(make([]complex128, 12), 4, false)
+	checkIsInputSizeError(t, "FastMultiConvolve(make([]complex128, 12), 4, false)", err)
+	// Test FastMultiConvolve(X) == slowMultiConvolve(X)
 	for i := 1; i < 25; i++ {
 		X1 := make([][]complex128, i)
 		n := NextPow2(i)

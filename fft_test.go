@@ -49,7 +49,42 @@ func copyVector(v []complex128) []complex128 {
 	return y
 }
 
+func TestPrepare(t *testing.T) {
+	// Test Prepare of non-powers of 2 returns InputSizeError
+	for N := 3; N < 101; N += 2 {
+		err := Prepare(N)
+		if err == nil {
+			t.Errorf("Prepare on non-power of 2 input size %d didn't return error", N)
+		}
+		switch e := err.(type) {
+		case *InputSizeError:
+		default:
+			t.Errorf("Prepare on non-power of 2 input size %d returned incorrect error type: %v", N, e)
+		}
+	}
+	// Test Prepare for power of 2 up to 2^30
+	for N := 2; N < (1 << 31); N <<= 1 {
+		if err := Prepare(N); err != nil {
+			t.Errorf("Prepare error on power of 2: %v", err)
+		}
+	}
+}
+
 func TestFFT(t *testing.T) {
+	// Test FFT of non-powers of 2 returns InputSizeError
+	for N := 3; N < 101; N += 2 {
+		x := complexRand(N)
+		err := FFT(x)
+		if err == nil {
+			t.Errorf("FFT on non-power of 2 input size %d didn't return error", N)
+		}
+		switch e := err.(type) {
+		case *InputSizeError:
+		default:
+			t.Errorf("FFT on non-power of 2 input size %d returned incorrect error type: %v", N, e)
+		}
+	}
+	// Test FFT(x) == slowFFT(x) for power of 2 up to 2^10
 	for N := 2; N < (1 << 11); N <<= 1 {
 		x := complexRand(N)
 
@@ -68,6 +103,20 @@ func TestFFT(t *testing.T) {
 }
 
 func TestIFFT(t *testing.T) {
+	// Test IFFT of non-powers of 2 returns InputSizeError
+	for N := 3; N < 101; N += 2 {
+		x := complexRand(N)
+		err := IFFT(x)
+		if err == nil {
+			t.Errorf("IFFT on non-power of 2 input size %d didn't return error", N)
+		}
+		switch e := err.(type) {
+		case *InputSizeError:
+		default:
+			t.Errorf("IFFT on non-power of 2 input size %d returned incorrect error type: %v", N, e)
+		}
+	}
+	// Test FFT(IFFT(x)) == x for power of 2 up to 2^10
 	for N := 2; N < (1 << 11); N <<= 1 {
 		x := complexRand(N)
 		y := copyVector(x)
