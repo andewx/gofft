@@ -51,31 +51,10 @@ func TestFastConvolve(t *testing.T) {
 		t.Errorf("FastConvolve on empty inputs returned error: %v", err)
 	}
 	// Test FastConvolve of non-powers of 2 returns InputSizeError
-	for N := 3; N < 101; N += 2 {
-		x := complexRand(5)
-		y := complexRand(5)
-		err := FastConvolve(x, y)
-		if err == nil {
-			t.Errorf("FastConvolve on non-power of 2 input size %d didn't return error", N)
-		}
-		switch e := err.(type) {
-		case *InputSizeError:
-		default:
-			t.Errorf("FastConvolve on non-power of 2 input size %d returned incorrect error type: %v", N, e)
-		}
-	}
-	// Test FastConvolve of different vector sizes returns InputSizeError
-	x = complexRand(4)
-	y = complexRand(8)
-	err = FastConvolve(x, y)
-	if err == nil {
-		t.Errorf("FastConvolve on differing input sizes didn't return error")
-	}
-	switch e := err.(type) {
-	case *InputSizeError:
-	default:
-		t.Errorf("FastConvolve on differing input sizes returned incorrect error type: %v", e)
-	}
+	err = FastConvolve(complexRand(17), complexRand(17))
+	checkIsInputSizeError(t, "FastConvolve(complexRand(17), complexRand(17))", err)
+	err = FastConvolve(complexRand(4), complexRand(8))
+	checkIsInputSizeError(t, "FastConvolve(complexRand(4), complexRand(8))", err)
 	// Test FastConvolve(x, y) == slowConvolve(x, y)
 	for i := 1; i < 128; i++ {
 		N := NextPow2(2 * i)
