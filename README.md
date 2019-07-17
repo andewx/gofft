@@ -10,7 +10,7 @@ The algorithm is non-recursive, works in-place overwriting the input array, and 
 ## What
 I took [an existing](https://github.com/ktye/fft) FFT implementation in Go, cleaned and improved the code API and performance, and replaced the permutation step with an algorithm that works with no temp array.
 
-Performance was more than doubled over the original code, and is consistently the fastest Go FFT library (see benchmarks below)
+Performance was more than doubled over the original code, and is consistently the fastest Go FFT library (see benchmarks below) while remaining in pure Go.
 
 Added convolution functions `Convolve(x, y)`, `FastConvolve(x, y)`, `MultiConvolve(x...)`, `FastMultiConvolve(X)`, which implement the discrete convolution and a new hierarchical convolution algorithm that has utility in a number of CS problems. This computes the convolution of many arrays in O(n\*ln(n)<sup>2</sup>) run time, and in the case of FastMultiConvolve O(1) additional space.
 
@@ -18,8 +18,6 @@ Also included new utility functions: `IsPow2`, `NextPow2`, `ZeroPad`, `ZeroPadTo
 
 ## Why
 Most existing FFT libraries in Go allocate temporary arrays with O(N) additional space. This is less-than-ideal when you have arrays of length of 2<sup>25</sup> or more, where you quickly end up allocating gigabytes of data and dragging down the FFT calculation to a halt.
-
-This code is much faster than major existing fft libraries while reducing memory usage and remaining in pure Go.
 
 Additionally, the new convolution functions have significant utility for projects I've written or am planning.
 
