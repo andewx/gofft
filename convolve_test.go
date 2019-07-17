@@ -34,7 +34,7 @@ func TestConvolve(t *testing.T) {
 				t.Errorf("slowConvolve and Convolve differ in length: len(r1)=%d, len(r2)=%d", len(r1), len(r2))
 			}
 			for k := 0; k < i+j-1; k++ {
-				if e := cmplx.Abs(r1[k] - r2[k]); e > 1E-9 {
+				if e := cmplx.Abs(r1[k] - r2[k]); e > 1e-9 {
 					t.Errorf("slowConvolve and Convolve differ: r1[%d]=%v, r2[%d]=%v, diff=%v", k, r1[k], k, r2[k], e)
 				}
 			}
@@ -59,12 +59,12 @@ func TestFastConvolve(t *testing.T) {
 			t.Error(err)
 		}
 		for j := 0; j < 2*i-1; j++ {
-			if e := cmplx.Abs(r1[j] - x[j]); e > 1E-9 {
+			if e := cmplx.Abs(r1[j] - x[j]); e > 1e-9 {
 				t.Errorf("slowConvolve and FastConvolve differ: r1[%d]=%v, x[%d]=%v, diff=%v", j, r1[j], j, x[j], e)
 			}
 		}
 		for j := 2*i - 1; j < N; j++ {
-			if e := cmplx.Abs(x[j]); e > 1E-9 {
+			if e := cmplx.Abs(x[j]); e > 1e-9 {
 				t.Errorf("FastConvolve failed to zero-pad x: got x[%d]=%v, expected x[%d]=%v, diff=%v", j, x[j], j, 0, e)
 			}
 		}
@@ -89,7 +89,7 @@ func TestMultiConvolve(t *testing.T) {
 		X := make([][]complex128, i)
 		for j := 1; j < 25; j++ {
 			// Error propagates on the order of j^i
-			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1E-10
+			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1e-10
 			// i arrays of length random(1, j)
 			for k := 0; k < i; k++ {
 				X[k] = complexRand(rand.Intn(j) + 1)
@@ -117,7 +117,7 @@ func TestFastMultiConvolve(t *testing.T) {
 		n := NextPow2(i)
 		for j := 1; j < 25; j++ {
 			// Error propagates on the order of j^i
-			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1E-10
+			errorThreshold := math.Pow(float64(j), float64(i)-1) * 1e-10
 			// i arrays of length j
 			m := NextPow2(2 * j)
 			X2 := make([]complex128, n*m)
@@ -256,7 +256,7 @@ func BenchmarkFastMultiConvolve(b *testing.B) {
 			b.SetBytes(int64(bm.size * bm.number * 16))
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				FastMultiConvolve(x, NextPow2(bm.size), false)
+				FastMultiConvolve(x, 2*NextPow2(bm.size), false)
 			}
 		})
 	}
@@ -279,7 +279,7 @@ func BenchmarkFastMultiConvolveParallel(b *testing.B) {
 			b.SetBytes(int64(bm.size * bm.number * 16))
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
-				err := FastMultiConvolve(x, NextPow2(bm.size), true)
+				err := FastMultiConvolve(x, 2*NextPow2(bm.size), true)
 				if err != nil {
 					b.Error(err)
 				}

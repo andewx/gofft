@@ -2,6 +2,7 @@ package gofft
 
 import (
 	"fmt"
+	"runtime"
 	"sync"
 )
 
@@ -152,19 +153,26 @@ func FastMultiConvolve(X []complex128, n int, multithread bool) error {
 			return err
 		}
 		n2 := n << 1
-		var wg sync.WaitGroup
-		for i := 0; i < N; i += n2 {
-			if multithread {
+		if multithread {
+			var wg sync.WaitGroup
+			NumCPU := runtime.NumCPU()
+			for j := 0; j < NumCPU; j++ {
 				wg.Add(1)
-				go func(i int) {
+				go func(j int) {
 					defer wg.Done()
-					convolve(X[i:i+n], X[i+n:i+n2], n, perm)
-				}(i)
-			} else {
+					s := (j * (N / n2)) / NumCPU
+					e := ((j + 1) * (N / n2)) / NumCPU
+					for i := s; i < e; i++ {
+						convolve(X[i*n2:i*n2+n], X[i*n2+n:i*n2+n2], n, perm)
+					}
+				}(j)
+			}
+			wg.Wait()
+		} else {
+			for i := 0; i < N; i += n2 {
 				convolve(X[i:i+n], X[i+n:i+n2], n, perm)
 			}
 		}
-		wg.Wait()
 	}
 	return nil
 }
