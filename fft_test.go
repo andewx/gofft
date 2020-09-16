@@ -1,16 +1,18 @@
 package gofft
 
 import (
-	ktyefft "github.com/ktye/fft"
-	dspfft "github.com/mjibson/go-dsp/fft"
 	"math"
 	"math/bits"
 	"math/cmplx"
 	"math/rand"
 	"runtime"
-	scientificfft "scientificgo.org/fft"
 	"sync/atomic"
 	"testing"
+
+	ktyefft "github.com/ktye/fft"
+	dspfft "github.com/mjibson/go-dsp/fft"
+	gonumfft "gonum.org/v1/gonum/dsp/fourier"
+	scientificfft "scientificgo.org/fft"
 )
 
 // Slow is the simplest and slowest FFT transform, for testing purposes
@@ -131,6 +133,7 @@ var (
 		{4096, "Medium (4096)"},
 		{131072, "Large (131072)"},
 		{4194304, "Huge (4194304)"},
+		{16777216, "Massive (16777216)"},
 	}
 )
 
@@ -184,6 +187,21 @@ func BenchmarkGoDSPFFT(b *testing.B) {
 			b.ResetTimer()
 			for i := 0; i < b.N; i++ {
 				dspfft.FFT(x)
+			}
+		})
+	}
+}
+
+func BenchmarkGonumFFT(b *testing.B) {
+	for _, bm := range benchmarks {
+		fft := gonumfft.NewCmplxFFT(bm.size)
+		x := complexRand(bm.size)
+
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				fft.Coefficients(x, x)
 			}
 		})
 	}
