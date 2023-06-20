@@ -288,3 +288,16 @@ func BenchmarkIFFTParallel(b *testing.B) {
 		})
 	}
 }
+
+func BenchmarkPermute(b *testing.B) {
+	for _, bm := range benchmarks {
+		x := complexRand(bm.size)
+		b.Run(bm.name, func(b *testing.B) {
+			b.SetBytes(int64(bm.size * 16))
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				permute(x)
+			}
+		})
+	}
+}

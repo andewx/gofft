@@ -121,7 +121,7 @@ func TestFloat64ToComplex128Array(t *testing.T) {
 		a := floatRand(i)
 		b := Float64ToComplex128Array(a)
 		if len(a) != len(b) {
-
+			t.Errorf("Float64ToComplex128Array, got: len(b) = %v, expected: len(b) = %v", len(b), len(a))
 		}
 		for j := 0; j < i; j++ {
 			if a[j] != real(b[j]) {
@@ -139,6 +139,9 @@ func TestComplex128ToFloat64Array(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		a := complexRand(i)
 		b := Complex128ToFloat64Array(a)
+		if len(a) != len(b) {
+			t.Errorf("Complex128ToFloat64Array, got: len(b) = %v, expected: len(b) = %v", len(b), len(a))
+		}
 		for j := 0; j < i; j++ {
 			if real(a[j]) != b[j] {
 				t.Errorf("Complex128ToFloat64Array, got: b[j] = %v, expected: b[j] = %v", b[j], real(a[j]))

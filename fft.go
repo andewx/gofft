@@ -114,7 +114,8 @@ func permute(x []complex128) {
 		x[1], x[2] = x[2], x[1]
 		return
 	case 8:
-		x[1], x[3], x[4], x[6] = x[4], x[6], x[1], x[3]
+		x[1], x[4] = x[4], x[1]
+		x[3], x[6] = x[6], x[3]
 		return
 	}
 	shift := 64 - uint64(bits.Len64(uint64(N-1)))
