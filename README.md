@@ -1,8 +1,8 @@
-# gofft [![GoDoc][godoc-badge]][godoc] [![Build Status][travis-ci-badge]][travis-ci] [![Report Card][report-card-badge]][report-card]
+# fft [![GoDoc][godoc-badge]][godoc] [![Build Status][travis-ci-badge]][travis-ci] [![Report Card][report-card-badge]][report-card]
 
 A better radix-2 fast Fourier transform in Go.
 
-Package gofft provides an efficient radix-2 fast discrete Fourier transformation algorithm in pure Go.
+Package fft provides an efficient radix-2 fast discrete Fourier transformation algorithm in pure Go.
 
 This code is much faster than existing FFT implementations and uses no additional memory.
 
@@ -33,31 +33,31 @@ package main
 
 import (
 	"fmt"
-	"github.com/argusdusty/gofft"
+	"github.com/argusdusty/fft"
 )
 
 func main() {
 	// Do an FFT and IFFT and get the same result
-	testArray := gofft.Float64ToComplex128Array([]float64{1, 2, 3, 4, 5, 6, 7, 8})
-	err := gofft.FFT(testArray)
+	testArray := fft.Float64ToComplex128Array([]float64{1, 2, 3, 4, 5, 6, 7, 8})
+	err := fft.FFT(testArray)
 	if err != nil {
 		panic(err)
 	}
-	err = gofft.IFFT(testArray)
+	err = fft.IFFT(testArray)
 	if err != nil {
 		panic(err)
 	}
-	result := gofft.Complex128ToFloat64Array(testArray)
-	gofft.RoundFloat64Array(result)
+	result := fft.Complex128ToFloat64Array(testArray)
+	fft.RoundFloat64Array(result)
 	fmt.Println(result)
 
 	// Do a discrete convolution of the testArray with itself
-	testArray, err = gofft.Convolve(testArray, testArray)
+	testArray, err = fft.Convolve(testArray, testArray)
 	if err != nil {
 		panic(err)
 	}
-	result = gofft.Complex128ToFloat64Array(testArray)
-	gofft.RoundFloat64Array(result)
+	result = fft.Complex128ToFloat64Array(testArray)
+	fft.RoundFloat64Array(result)
 	fmt.Println(result)
 }
 ```
@@ -72,10 +72,10 @@ Outputs:
 ### Benchmarks
 
 ```text
-gofft>go test -bench=FFT$ -benchmem -cpu=1 -benchtime=5s
+fft>go test -bench=FFT$ -benchmem -cpu=1 -benchtime=5s
 goos: windows
 goarch: amd64
-pkg: github.com/argusdusty/gofft
+pkg: github.com/argusdusty/fft
 cpu: AMD Ryzen 9 5900X 12-Core Processor
 ```
 
@@ -106,16 +106,16 @@ cpu: AMD Ryzen 9 5900X 12-Core Processor
 | scientificgo   | Large (131072)     | 2526       | 2886025 ns/op    | 726.66 MB/s   | 4194304 B/op   | 2 allocs/op  |
 | scientificgo   | Huge (4194304)     | 26         | 228963535 ns/op  | 293.10 MB/s   | 134217728 B/op | 2 allocs/op  |
 | scientificgo   | Massive (16777216) | 4          | 1312125600 ns/op | 204.58 MB/s   | 536870914 B/op | 2 allocs/op  |
-| gofft          | Tiny (4)           | 1000000000 | 5.687 ns/op      | 11253.23 MB/s | 0 B/op         | 0 allocs/op  |
-| gofft          | Small (128)        | 6283482    | 1037 ns/op       | 1974.64 MB/s  | 0 B/op         | 0 allocs/op  |
-| gofft          | Medium (4096)      | 120750     | 51886 ns/op      | 1263.07 MB/s  | 0 B/op         | 0 allocs/op  |
-| gofft          | Large (131072)     | 2596       | 2387875 ns/op    | 878.25 MB/s   | 0 B/op         | 0 allocs/op  |
-| gofft          | Huge (4194304)     | 27         | 265444115 ns/op  | 252.82 MB/s   | 0 B/op         | 0 allocs/op  |
-| gofft          | Massive (16777216) | 5          | 1069123500 ns/op | 251.08 MB/s   | 0 B/op         | 0 allocs/op  |
+| fft          | Tiny (4)           | 1000000000 | 5.687 ns/op      | 11253.23 MB/s | 0 B/op         | 0 allocs/op  |
+| fft          | Small (128)        | 6283482    | 1037 ns/op       | 1974.64 MB/s  | 0 B/op         | 0 allocs/op  |
+| fft          | Medium (4096)      | 120750     | 51886 ns/op      | 1263.07 MB/s  | 0 B/op         | 0 allocs/op  |
+| fft          | Large (131072)     | 2596       | 2387875 ns/op    | 878.25 MB/s   | 0 B/op         | 0 allocs/op  |
+| fft          | Huge (4194304)     | 27         | 265444115 ns/op  | 252.82 MB/s   | 0 B/op         | 0 allocs/op  |
+| fft          | Massive (16777216) | 5          | 1069123500 ns/op | 251.08 MB/s   | 0 B/op         | 0 allocs/op  |
 
-[travis-ci-badge]:   https://api.travis-ci.org/argusdusty/gofft.svg?branch=master
-[travis-ci]:         https://api.travis-ci.org/argusdusty/gofft
-[godoc-badge]:       https://godoc.org/github.com/argusdusty/gofft?status.svg
-[godoc]:             https://godoc.org/github.com/argusdusty/gofft
-[report-card-badge]: https://goreportcard.com/badge/github.com/argusdusty/gofft
-[report-card]:       https://goreportcard.com/report/github.com/argusdusty/gofft
+[travis-ci-badge]:   https://api.travis-ci.org/argusdusty/fft.svg?branch=master
+[travis-ci]:         https://api.travis-ci.org/argusdusty/fft
+[godoc-badge]:       https://godoc.org/github.com/argusdusty/fft?status.svg
+[godoc]:             https://godoc.org/github.com/argusdusty/fft
+[report-card-badge]: https://goreportcard.com/badge/github.com/argusdusty/fft
+[report-card]:       https://goreportcard.com/report/github.com/argusdusty/fft

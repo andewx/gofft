@@ -1,4 +1,4 @@
-package gofft
+package fft
 
 import (
 	"runtime"

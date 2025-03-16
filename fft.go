@@ -1,11 +1,11 @@
-// Package gofft provides a fast discrete Fourier transformation algorithm.
+// Package fft provides a fast discrete Fourier transformation algorithm.
 //
 // Implemented is the 1-dimensional DFT of complex input data
 // for with input lengths which are powers of 2.
 //
 // The algorithm is non-recursive, works in-place overwriting
 // the input array, and requires O(1) additional space.
-package gofft
+package fft
 
 import (
 	"math/bits"
