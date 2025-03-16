@@ -1,4 +1,4 @@
-module github.com/argusdusty/gofft
+module github.com/andewx/gofft
 
 go 1.12
 
