@@ -32,6 +32,18 @@ func FFT(x []complex128) error {
 	return nil
 }
 
+// FFTSinglePrecision implements the fast Fourier transform. In Float32 Format
+// This is done in-place (modifying the input array).
+// Requires O(1) additional memory.
+// len(x) must be a perfect power of 2, otherwise this will return an error.
+func FFTSinglePrecision(x []complex64) error {
+	if err := checkLength("FFT Input", len(x)); err != nil {
+		return err
+	}
+	fft64(x)
+	return nil
+}
+
 // IFFT implements the inverse fast Fourier transform.
 // This is done in-place (modifying the input array).
 // Requires O(1) additional memory.
@@ -105,6 +117,79 @@ func ifft(x []complex128) {
 // permutate permutes the input vector using bit reversal.
 // Uses an in-place algorithm that runs in O(N) time and O(1) additional space.
 func permute(x []complex128) {
+	N := len(x)
+	// Handle small N quickly
+	switch N {
+	case 1, 2:
+		return
+	case 4:
+		x[1], x[2] = x[2], x[1]
+		return
+	case 8:
+		x[1], x[4] = x[4], x[1]
+		x[3], x[6] = x[6], x[3]
+		return
+	}
+	shift := 64 - uint64(bits.Len64(uint64(N-1)))
+	N2 := N >> 1
+	for i := 0; i < N; i += 2 {
+		ind := int(bits.Reverse64(uint64(i)) >> shift)
+		// Skip cases where low bit isn't set while high bit is
+		// This eliminates 25% of iterations
+		if i < N2 {
+			if ind > i {
+				x[i], x[ind] = x[ind], x[i]
+			}
+		}
+		ind |= N2 // Fast way to get int(bits.Reverse64(uint64(i+1)) >> shift) here
+		if ind > i+1 {
+			x[i+1], x[ind] = x[ind], x[i+1]
+		}
+	}
+}
+
+// fft does the actual work for FFT
+func fft64(x []complex64) {
+	N := len(x)
+	// Handle small N quickly
+	switch N {
+	case 1:
+		return
+	case 2:
+		x[0], x[1] = x[0]+x[1], x[0]-x[1]
+		return
+	case 4:
+		f := complex(imag(x[1])-imag(x[3]), real(x[3])-real(x[1]))
+		x[0], x[1], x[2], x[3] = x[0]+x[1]+x[2]+x[3], x[0]-x[2]+f, x[0]-x[1]+x[2]-x[3], x[0]-x[2]-f
+		return
+	}
+	// Reorder the input array.
+	permute64(x)
+	// Butterfly
+	// First 2 steps
+	for i := 0; i < N; i += 4 {
+		f := complex(float32(imag(x[i+2])-imag(x[i+3])), float32(real(x[i+3])-real(x[i+2])))
+		x[i], x[i+1], x[i+2], x[i+3] = x[i]+x[i+1]+x[i+2]+x[i+3], x[i]-x[i+1]+f, x[i]-x[i+2]+x[i+1]-x[i+3], x[i]-x[i+1]-f
+	}
+	// Remaining steps
+	w := complex(float32(0), float32(-1))
+	for n := 4; n < N; n <<= 1 {
+		w = complex64(cmplx.Sqrt(complex128(w)))
+		for o := 0; o < N; o += (n << 1) {
+			wj := complex(float32(1), float32(0))
+			for k := 0; k < n; k++ {
+				i := k + o
+				f := wj * x[i+n]
+				x[i], x[i+n] = x[i]+f, x[i]-f
+				wj *= w
+			}
+		}
+	}
+}
+
+// permutate permutes the input vector using bit reversal.
+// Uses an in-place algorithm that runs in O(N) time and O(1) additional space.
+func permute64(x []complex64) {
 	N := len(x)
 	// Handle small N quickly
 	switch N {

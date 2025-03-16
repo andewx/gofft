@@ -69,3 +69,21 @@ func RoundFloat64Array(x []float64) {
 		x[i] = math.Round(v)
 	}
 }
+
+// Complex64ToComplex128 converts a slice of complex64 to complex128
+func Complex64ToComplex128(data []complex64) []complex128 {
+	result := make([]complex128, len(data))
+	for i := 0; i < len(data); i++ {
+		result[i] = complex(float64(real(data[i])), float64(imag(data[i])))
+	}
+	return result
+}
+
+// Complex128ToComplex64 converts a slice of complex128 to complex64
+func Complex128ToComplex64(data []complex128) []complex64 {
+	result := make([]complex64, len(data))
+	for i := 0; i < len(data); i++ {
+		result[i] = complex(float32(real(data[i])), float32(imag(data[i])))
+	}
+	return result
+}
